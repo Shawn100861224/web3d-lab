@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 00:47",
+  "updated": "2026-10-05 00:50",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -63,10 +63,19 @@
     },
     {
       "name": "场景库与路由",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-05 00:47",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:50",
+          "text": "通过：tsc 无错 + npm run build 通过；浏览器 /scenes -> 显示「共 4 个场景」+ 4 张卡片（缩略图由 scripts/make_thumbnails.py 从实拍截图裁出，亮度统计与原图一致）；点击卡片 -> 路由到 /scenes/robot-head，钩子 #viewer-state status=ready splats=45401；深链直接开 /scenes/valley 刷新后仍正常（SPA fallback + useParams）；/ 首页精选行显示 2 个 featured 场景；视觉核验无错位/破图"
+        }
+      ],
       "issues": []
     },
     {
