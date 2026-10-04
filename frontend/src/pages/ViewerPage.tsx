@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import MetricsPanel from '../components/MetricsPanel'
 import SplatViewer, { type ViewerStats } from '../components/SplatViewer'
-import { ApiError, fetchScene, type Scene } from '../lib/api'
+import { ApiError, fetchScene, fetchStats, trackEvent, type Scene } from '../lib/api'
 
 export const EMPTY_STATS: ViewerStats = {
   status: 'loading',
@@ -30,12 +30,21 @@ export default function ViewerPage() {
   const [metaError, setMetaError] = useState<string | null>(null)
   const [live, setLive] = useState<ViewerStats>(EMPTY_STATS)
   const [autoRotate, setAutoRotate] = useState(true)
+  const [views, setViews] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
+    trackEvent('view', `/scenes/${slug}`, slug)
     setScene(null)
     setMetaError(null)
+    setViews(null)
     setLive(EMPTY_STATS)
+    fetchStats(14)
+      .then((doc) => {
+        if (!alive) return
+        setViews(doc.per_scene.find((s) => s.slug === slug)?.views ?? 0)
+      })
+      .catch(() => alive && setViews(null))
     fetchScene(slug)
       .then((s) => alive && setScene(s))
       .catch((err: unknown) => {
@@ -52,6 +61,13 @@ export default function ViewerPage() {
       alive = false
     }
   }, [slug])
+
+  // 点云真正解析完成才记一次「加载成功」——这是衡量「访客真的看到了重建场景」的指标，
+  // 与单纯打开页面区分开。
+  useEffect(() => {
+    if (live.status === 'ready') trackEvent('splat_load', `/scenes/${slug}`, slug)
+    if (live.status === 'error') trackEvent('render_error', `/scenes/${slug}`, slug)
+  }, [live.status, slug])
 
   const pct = Math.round(live.progress * 100)
   const assetUrl = scene?.asset_url ?? `/demo/${slug}.spz`
@@ -70,6 +86,7 @@ export default function ViewerPage() {
         </div>
         <div className="topbar-actions">
           <span className="badge">{scene?.technique ?? '3DGS'}</span>
+          {views !== null && <span className="muted">已被浏览 {views} 次</span>}
           <button type="button" onClick={() => setAutoRotate((v) => !v)}>
             {autoRotate ? '停止巡航' : '自动巡航'}
           </button>

@@ -69,3 +69,53 @@ class ScenePublic(SceneBase):
 class SceneList(SQLModel):
     total: int
     items: list[ScenePublic]
+
+
+class PageView(SQLModel, table=True):
+    """一次前端事件（页面浏览 / 场景加载成功 / 渲染失败）。
+
+    刻意不存完整 UA 和 IP：只留浏览器族与访客随机 ID，够算统计，少留隐私。
+    """
+
+    id: int | None = Field(default=None, primary_key=True)
+    event: str = Field(default="view", max_length=32, index=True)
+    path: str = Field(max_length=300)
+    scene_slug: str | None = Field(default=None, max_length=80, index=True)
+    client_id: str = Field(max_length=64, index=True)
+    referrer: str | None = Field(default=None, max_length=300)
+    ua_family: str | None = Field(default=None, max_length=40)
+    created_at: datetime = Field(default_factory=_utcnow, index=True)
+
+
+class EventIn(SQLModel):
+    event: str = Field(default="view", max_length=32)
+    path: str = Field(max_length=300)
+    scene_slug: str | None = Field(default=None, max_length=80)
+    client_id: str = Field(min_length=8, max_length=64)
+    referrer: str | None = Field(default=None, max_length=300)
+
+
+class EventAck(SQLModel):
+    ok: bool
+    id: int | None = None
+    deduped: bool = False
+
+
+class SceneStat(SQLModel):
+    slug: str
+    title: str | None = None
+    views: int
+
+
+class DailyStat(SQLModel):
+    date: str
+    views: int
+
+
+class StatsOut(SQLModel):
+    total_views: int
+    unique_clients: int
+    splat_loads: int
+    per_scene: list[SceneStat]
+    daily: list[DailyStat]
+    generated_at: datetime

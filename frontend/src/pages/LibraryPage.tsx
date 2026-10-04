@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import SceneCard from '../components/SceneCard'
-import { fetchScenes, type Scene } from '../lib/api'
+import { fetchScenes, trackEvent, type Scene } from '../lib/api'
 
 /** /scenes —— 场景库：卡片从 /api/scenes 拉取，点击进详情查看器。 */
 export default function LibraryPage() {
@@ -9,6 +9,7 @@ export default function LibraryPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    trackEvent('view', '/scenes')
     let alive = true
     fetchScenes({ limit: 100 })
       .then((doc) => {

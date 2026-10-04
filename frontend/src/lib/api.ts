@@ -83,3 +83,63 @@ export function formatDuration(seconds: number | null): string {
   const s = seconds % 60
   return m ? `${m} 分 ${s} 秒` : `${s} 秒`
 }
+
+
+// ---------- 访问统计 ----------
+
+export type SceneStat = { slug: string; title: string | null; views: number }
+export type DailyStat = { date: string; views: number }
+export type Stats = {
+  total_views: number
+  unique_clients: number
+  splat_loads: number
+  per_scene: SceneStat[]
+  daily: DailyStat[]
+  generated_at: string
+}
+
+const CLIENT_ID_KEY = 'web3d-lab:client-id'
+
+/** 访客随机 ID：只存在浏览器本地，后端拿它算「独立访客」，与身份无关。 */
+export function getClientId(): string {
+  try {
+    const existing = window.localStorage.getItem(CLIENT_ID_KEY)
+    if (existing) return existing
+    const fresh =
+      typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `c-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`
+    window.localStorage.setItem(CLIENT_ID_KEY, fresh)
+    return fresh
+  } catch {
+    // 隐身模式/禁用存储时退化成一次性 ID，统计仍然可用
+    return `ephemeral-${Math.random().toString(36).slice(2)}`
+  }
+}
+
+export type TrackedEvent = 'view' | 'splat_load' | 'render_error'
+
+/** 上报事件。统计不该拖慢页面：失败只记 console，不抛给调用方。 */
+export function trackEvent(event: TrackedEvent, path: string, sceneSlug?: string | null): void {
+  const body = JSON.stringify({
+    event,
+    path,
+    scene_slug: sceneSlug ?? null,
+    client_id: getClientId(),
+    referrer: document.referrer || null,
+  })
+  void fetch('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    keepalive: true,
+  })
+    .then((r) => {
+      if (!r.ok && r.status !== 202) console.warn('[stats] 事件上报未成功', r.status)
+    })
+    .catch((err: unknown) => console.warn('[stats] 事件上报失败', err))
+}
+
+export function fetchStats(days = 14): Promise<Stats> {
+  return getJson<Stats>(`/api/stats?days=${days}`)
+}

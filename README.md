@@ -92,6 +92,7 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 
 ## 新会话怎么接手（重要）
 
+- **先读 `HANDOFF.md`**（交接表：这条线发生过什么 / 留下什么 / 别再重复什么 / 下一步），再读 `PROGRESS.md` 的自动区。
 - **续跑**：读 `PROGRESS.md` 看「进行中/待办」，跑
   `python <skills>/autonomous-ai-agents/autonomous-dev-loop/scripts/devloop.py check`
   从下一个模块接着做；不要重新侦察已定的技术栈。

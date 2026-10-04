@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 00:50",
+  "updated": "2026-10-05 00:54",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -80,10 +80,19 @@
     },
     {
       "name": "访问统计",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-05 00:50",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:54",
+          "text": "通过：pytest tests -q -> 19 passed（含 30s 去重、独立访客去重、splat_load 单独计数、days 越界 422、+08 时区分桶）；真实 HTTP：POST /api/events -> 201 {id:1,deduped:false}，同参数 30s 内重发 -> 202 deduped:true；GET /api/stats 由 total_views=0 变为 3、splat_loads=2、per_scene=[(robot-head,2)]，日桶落在本地 2026-10-05；前端首页统计卡显示「3 累计浏览 / 2 独立访客 / 2 场景加载成功」+ 14 天 SVG 曲线，查看器页显示「已被浏览 2 次」——皆为浏览器真实上报后回读"
+        }
+      ],
       "issues": []
     },
     {

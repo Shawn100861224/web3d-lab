@@ -601,3 +601,88 @@ button:active {
     gap: 10px;
   }
 }
+
+
+/* ---------- 访问统计卡 ---------- */
+.stats-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 18px 20px;
+}
+
+.stats-numbers {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+}
+
+.stats-numbers div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stats-numbers .num {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.6rem;
+  line-height: 1.1;
+  color: var(--accent);
+}
+
+.stats-numbers .label {
+  color: var(--muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+}
+
+.stats-chart .muted {
+  margin: 6px 0 0;
+  font-size: 0.76rem;
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  overflow: visible;
+}
+
+.stats-scenes {
+  grid-column: 1 / -1;
+  list-style: none;
+  margin: 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+}
+
+.stats-scenes li {
+  display: flex;
+  gap: 8px;
+  font-size: 0.84rem;
+}
+
+.stats-scenes a {
+  color: var(--fg);
+  text-decoration: none;
+}
+
+.stats-scenes a:hover {
+  color: var(--accent);
+}
+
+.stats-scenes span {
+  color: var(--muted);
+}
+
+@media (max-width: 780px) {
+  .stats-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
