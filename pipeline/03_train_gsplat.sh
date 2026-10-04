@@ -15,7 +15,9 @@ echo "CUDA_HOME=$CUDA_HOME"
 echo "nvcc: $(command -v nvcc || echo '未找到')  |  编译目标: $TORCH_CUDA_ARCH_LIST"
 
 # 首次运行会 JIT 编译 gsplat 的 CUDA 核（3~8 分钟，只发生一次；缓存在 ~/.cache/torch_extensions）
-python "$PIPE_DIR/03_train_gsplat.py" \
+# -u（无缓冲）：输出重定向到文件时 Python 默认块缓冲，日志会一直看不到，
+# 只有进程结束才刷出来 —— 用 `| tee` 或 -u 才能实时观察训练进度。
+python -u "$PIPE_DIR/03_train_gsplat.py" \
   --data "$DATA" \
   --steps "$STEPS" \
   --sh-degree 3 \

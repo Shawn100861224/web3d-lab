@@ -38,7 +38,10 @@ TILE_SCALE = 2.4          # 地面贴图的世界平铺周期
 LIGHT_DIR = np.array([0.42, 0.78, 0.36])
 LIGHT_DIR = LIGHT_DIR / np.linalg.norm(LIGHT_DIR)
 
+BACKDROP_R = 8.0           # 环绕背景球半径（把「天空」换成有纹理的面，否则 COLMAP 在背景上
+                           # 一个特征点都没有，3DGS 永远重建不出那块区域，PSNR 会被它拖死）
 FLOOR_TEX: np.ndarray | None = None   # 由 main 注入（避免层层传参）
+BACKDROP_TEX: np.ndarray | None = None
 
 
 def voronoi_mosaic(rng: np.random.Generator, size: int = 768, cells: int = 24,
@@ -131,11 +134,26 @@ def render(width: int, height: int, fov_deg: float, eye: np.ndarray, target: np.
     dirs = dx[..., None] * right + dy[..., None] * up + dz[..., None] * forward
     dirs = dirs / np.linalg.norm(dirs, axis=-1, keepdims=True)
 
-    t_sky = np.clip(dirs[..., 1], 0, 1)
-    color = (1 - t_sky)[..., None] * np.array([0.26, 0.32, 0.40]) + t_sky[..., None] * np.array(
-        [0.60, 0.70, 0.82]
-    )
+    # 背景球（从内部看，取"出射"交点）
+    oc = eye
+    b = np.sum(dirs * oc, axis=-1)
+    c = float(np.dot(oc, oc) - BACKDROP_R**2)
+    disc = b * b - c
+    color = np.zeros((height, width, 3), dtype=np.float32)
     depth = np.full((height, width), np.inf, dtype=np.float32)
+    with np.errstate(invalid="ignore"):
+        t_b = -b + np.sqrt(np.maximum(disc, 0))
+    hitb = disc > 0
+    if hitb.any():
+        p = eye + dirs * t_b[..., None]
+        n = (p - np.array([0.0, 0.0, 0.0])) / BACKDROP_R
+        u = (np.arctan2(n[..., 2], n[..., 0]) / (2 * math.pi)) % 1.0
+        v = (np.arccos(np.clip(n[..., 1], -1, 1)) / math.pi)
+        texb = BACKDROP_TEX if BACKDROP_TEX is not None else tex
+        base = sample_tex(texb, (u * 3) % 1.0, (v * 3) % 1.0)
+        shade = np.clip(n @ LIGHT_DIR, 0, 1)[..., None]
+        color = np.where(hitb[..., None], np.clip(base * (0.45 + 0.55 * shade), 0, 1), color)
+        depth = np.where(hitb, t_b, depth)
 
     # ---- 地面（平铺 Voronoi）----
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -197,7 +215,7 @@ def render(width: int, height: int, fov_deg: float, eye: np.ndarray, target: np.
 
 
 def main() -> int:
-    global FLOOR_TEX
+    global FLOOR_TEX, BACKDROP_TEX
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--views", type=int, default=40)
@@ -215,7 +233,8 @@ def main() -> int:
 
     rng = np.random.default_rng(args.seed)
     tex = voronoi_mosaic(rng, size=768, cells=24)        # 物体 / 平板（768/24=32）
-    FLOOR_TEX = voronoi_mosaic(rng, size=768, cells=48)  # 地面（不同密度；768/48=16 整除）
+    FLOOR_TEX = voronoi_mosaic(rng, size=768, cells=48)    # 地面（不同密度；768/48=16 整除）
+    BACKDROP_TEX = voronoi_mosaic(rng, size=768, cells=16)  # 背景球（更粗的格子，远看也稳）
     tiles = make_tiles(rng)
     if args.save_texture:
         Image.fromarray((tex ** (1 / 2.2) * 255).astype(np.uint8)).save(out / "texture.png")

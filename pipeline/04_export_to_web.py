@@ -109,10 +109,14 @@ def main() -> int:
     ap.add_argument("--frontend", default="/mnt/d/lab/web3d-lab/frontend")
     ap.add_argument("--min-opacity", type=float, default=0.02)
     ap.add_argument("--no-register", action="store_true")
+    ap.add_argument("--metrics", default=None,
+                    help="显式指定 metrics.json（WSL 与 Windows 之间靠共享盘传递）")
+    ap.add_argument("--asset", default=None,
+                    help="资产已就位时直接用它（如 toy-capture.splat），跳过拷贝")
     args = ap.parse_args()
 
     data = Path(args.data).expanduser()
-    metrics_path = data / "train" / "metrics.json"
+    metrics_path = Path(args.metrics).expanduser() if args.metrics else data / "train" / "metrics.json"
     if not metrics_path.exists():
         print(f"❌ 找不到 {metrics_path}，先跑 03")
         return 2
@@ -122,6 +126,18 @@ def main() -> int:
 
     dest_dir = Path(args.frontend) / "public" / "demo"
     dest_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.asset:
+        dest = Path(args.asset)
+        if not dest.is_absolute():
+            dest = dest_dir / dest.name
+        if not dest.exists():
+            print(f"❌ --asset 指定的文件不存在：{dest}")
+            return 2
+        mb = round(dest.stat().st_size / 1024 / 1024, 3)
+        print(f"资产已就位：{dest.name}（{mb} MB）")
+        return register(args, metrics, dest, dest.suffix.lstrip("."), mb,
+                        metrics["splats"], {"sh_degree": 0})
 
     splat = metrics.get("splat")
     if splat and Path(splat).exists():

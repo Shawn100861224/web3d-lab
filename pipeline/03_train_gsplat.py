@@ -64,8 +64,11 @@ def read_colmap_txt(sparse_dir: Path) -> tuple[dict, list[dict], np.ndarray, np.
     lines = [l for l in (sparse_dir / "images.txt").read_text().splitlines() if l.strip() and not l.startswith("#")]
     for i in range(0, len(lines), 2):  # 奇数行是 2D 观测，跳过
         parts = lines[i].split()
-        qvec = np.array([float(x) for x in parts[1:5]])  # w x y z
-        tvec = np.array([float(x) for x in parts[5:8]])
+        # 必须显式 float32：np.array([float(x)…]) 默认是 float64，
+        # 拼进 viewmat 后会整块变 double，gsplat 的 CUDA 核直接报
+        # "expected scalar type Float but found Double"。
+        qvec = np.array([float(x) for x in parts[1:5]], dtype=np.float32)  # w x y z
+        tvec = np.array([float(x) for x in parts[5:8]], dtype=np.float32)
         cam_id = int(parts[8])
         name = parts[9]
         images.append({"qvec": qvec, "tvec": tvec, "cam_id": cam_id, "name": name})
@@ -195,8 +198,24 @@ def main() -> int:
                 dtype=np.float32,
             )
         )
-    viewmats = torch.from_numpy(np.stack(viewmats)).to(dev)
-    Ks = torch.from_numpy(np.stack(Ks)).to(dev)
+    viewmats = torch.from_numpy(np.stack(viewmats)).to(dev).float()
+    Ks = torch.from_numpy(np.stack(Ks)).to(dev).float()
+
+    # 防御性检查：gsplat 的 CUDA 核只吃 float32，混进 double 会以一句
+    # "expected scalar type Float but found Double" 结束，不给任何线索。
+    for _name, _t in (("viewmats", viewmats), ("Ks", Ks)):
+        if _t.dtype != torch.float32:
+            raise SystemExit(f"❌ {_name} 是 {_t.dtype}，gsplat 只接受 float32")
+
+    # ---- 场景归一化：COLMAP 的尺度是任意的，直接拿真实尺度套标准学习率会让位置几乎不动。
+    # 把所有平移（点 + 相机）缩放到「场景半径 ≈ 1.5」，超参就能用通行的那套。
+    cam_t = viewmats[:, :3, 3]
+    pts_all = np.concatenate([pts_xyz, cam_t.cpu().numpy()])
+    scene_radius = float(np.linalg.norm(pts_all - pts_all.mean(0), axis=1).max())
+    scale_factor = 1.5 / max(scene_radius, 1e-6)
+    viewmats[:, :3, 3] *= scale_factor
+    pts_xyz = pts_xyz * scale_factor
+    print(f"场景归一化：半径 {scene_radius:.2f} -> 1.5（缩放系数 {scale_factor:.4f}）")
 
     n_train = len(views) - args.holdout
     train_idx = list(range(n_train))
@@ -252,7 +271,8 @@ def main() -> int:
             viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H,
             sh_degree=cur_deg,
         )
-        img = renders[0]
+        # gsplat 返回 (C, H, W, 3)；转成 (C, 3, H, W) 才能和 gt 比对
+        img = renders[0].permute(2, 0, 1).unsqueeze(0)
         loss = 0.8 * F.l1_loss(img, gt) + 0.2 * (1 - ssim_simple(img, gt))
         opt.zero_grad(set_to_none=True)
         loss.backward()
@@ -268,35 +288,50 @@ def main() -> int:
 
         opt.step()
 
-        # ---- 稠密化（clone / split / prune）----
+        # ---- 稠密化（clone / split / prune）+ 不透明度周期重置 ----
+        # 对齐 Inria 3DGS 的做法，但阈值按「归一化场景（半径≈1.5）」取：
+        #   clone：梯度大的小高斯原地复制一份
+        #   split：梯度大的大高斯裂成两个（位置抖动、尺度 ÷1.6）
+        #   prune：不透明度 < 0.005 或尺度过大的漂浮物直接删
+        # 每 3000 步把所有不透明度压回 0.01，逼着系统重新决定谁该留下。
+        if step % 3000 == 0 and step < args.steps:
+            with torch.no_grad():
+                opac_raw.data.fill_(-4.595)  # sigmoid(-4.595) ≈ 0.01
+
         if densify_from <= step <= densify_until and step % 100 == 0:
             with torch.no_grad():
-                vis = grad_acc / max(1, 100)
+                grads = grad_acc / 100.0                      # 区间内平均梯度模长
                 grad_acc.zero_()
-                dens = vis > 2e-4
-                big = torch.exp(scales).max(dim=-1).values * 0.01
-                split_mask = dens & (torch.exp(scales).max(dim=-1).values > big.median() * 2)
-                clone_mask = dens & ~split_mask
+                max_scale = torch.exp(scales).max(dim=-1).values
+                densify_mask = grads >= 2e-4
+                split_mask = densify_mask & (max_scale > 0.015)
+                clone_mask = densify_mask & ~split_mask
+
                 new_means, new_scales, new_quats, new_opac, new_sh = [], [], [], [], []
-                for mask, n_copy in ((clone_mask, 1), (split_mask, 2)):
-                    k = int(mask.sum())
-                    if k == 0:
-                        continue
-                    for _ in range(n_copy):
-                        new_means.append(means[mask].detach())
-                        s = scales[mask].detach()
-                        if n_copy == 2:
-                            s = s - math.log(1.6)
-                        new_scales.append(s)
-                        new_quats.append(quats[mask].detach())
-                        new_opac.append(opac_raw[mask].detach())
-                        new_sh.append(sh[mask].detach())
-                if new_means:
-                    keep = torch.sigmoid(opac_raw) > 0.005
-                    cap = 600_000
-                    idx_keep = torch.nonzero(keep).squeeze(-1)
-                    if idx_keep.shape[0] > cap:
-                        idx_keep = idx_keep[:cap]
+                if bool(clone_mask.any()):
+                    new_means.append(means[clone_mask].detach())
+                    new_scales.append(scales[clone_mask].detach())
+                    new_quats.append(quats[clone_mask].detach())
+                    new_opac.append(opac_raw[clone_mask].detach())
+                    new_sh.append(sh[clone_mask].detach())
+                if bool(split_mask.any()):
+                    for _ in range(2):
+                        m = means[split_mask].detach()
+                        jitter = torch.randn_like(m) * torch.exp(scales[split_mask].detach())
+                        new_means.append(m + jitter)
+                        new_scales.append(scales[split_mask].detach() - math.log(1.6))
+                        new_quats.append(quats[split_mask].detach())
+                        new_opac.append(opac_raw[split_mask].detach())
+                        new_sh.append(sh[split_mask].detach())
+
+                keep = (torch.sigmoid(opac_raw) > 0.005) & (max_scale < 0.15)
+                cap = 300_000
+                idx_keep = torch.nonzero(keep).squeeze(-1)
+                if idx_keep.shape[0] > cap:
+                    # 超上限时按不透明度保留最"实"的那些
+                    order = torch.argsort(torch.sigmoid(opac_raw[idx_keep]), descending=True)
+                    idx_keep = idx_keep[order[:cap]]
+                if new_means or idx_keep.shape[0] != means.shape[0]:
                     means = torch.nn.Parameter(torch.cat([means[idx_keep].detach()] + new_means))
                     scales = torch.nn.Parameter(torch.cat([scales[idx_keep].detach()] + new_scales))
                     quats = torch.nn.Parameter(torch.cat([quats[idx_keep].detach()] + new_quats))
@@ -327,8 +362,9 @@ def main() -> int:
                 means, quats, scales, torch.sigmoid(opac_raw), sh,
                 viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H, sh_degree=args.sh_degree,
             )
+            ev = renders[0].permute(2, 0, 1).unsqueeze(0)
             eval_rows.append(
-                {"name": views[cam]["name"], "psnr": psnr(renders[0], gt), "ssim": float(ssim_simple(renders[0], gt))}
+                {"name": views[cam]["name"], "psnr": psnr(ev, gt), "ssim": float(ssim_simple(ev, gt))}
             )
     mean_psnr = float(np.mean([r["psnr"] for r in eval_rows])) if eval_rows else float("nan")
     mean_ssim = float(np.mean([r["ssim"] for r in eval_rows])) if eval_rows else float("nan")
