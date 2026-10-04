@@ -11,6 +11,10 @@ backend/data/
 # 前端
 node_modules/
 frontend/dist/
+frontend/dist2/
+frontend/dist-edgeone/
+frontend/dist-*.zip
+frontend/.vite/
 frontend/.vite/
 
 # 训练产物 / 大文件（不进 git）
