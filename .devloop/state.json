@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 00:29",
+  "updated": "2026-10-05 00:30",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -29,10 +29,19 @@
     },
     {
       "name": "场景元数据API",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-05 00:29",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:30",
+          "text": "通过：pytest tests -q -> 11 passed；真实 HTTP 复验 backend/scripts/verify_api.py -> 全部通过（空库 GET /api/scenes 返回 200 {\"total\":0,\"items\":[]} 而非常见 404；POST 201 后中文标题 UTF-8 往返无损；未知 slug 404、重复 slug 409、缺字段 422、limit=0 422）；seed_scenes.py --reset -> 库中 2 条，GET 列表 total=2"
+        }
+      ],
       "issues": []
     },
     {

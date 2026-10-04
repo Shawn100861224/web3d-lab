@@ -16,8 +16,9 @@ engine = create_engine(
 
 
 def init_db() -> None:
-    # 导入模型模块以注册元数据（模块 2 加入 models 后在此 import）
-    # from . import models  # noqa: F401
+    # 导入模型模块以注册元数据（SQLModel.metadata 需要被 import 过才认识表）
+    from . import models  # noqa: F401
+
     SQLModel.metadata.create_all(engine)
 
 
