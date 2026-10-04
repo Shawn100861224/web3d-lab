@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 00:54",
+  "updated": "2026-10-05 00:57",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -97,10 +97,19 @@
     },
     {
       "name": "留言板",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-05 00:54",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:57",
+          "text": "通过：pytest tests -q -> 28 passed（含空列表200、原文存储、限流、按场景过滤、越界422）；真实 HTTP：连续 3 条 201、第 4 条 429「请 600 秒后再试」+ Retry-After 头；读回确认留言正文里的 <img src=x onerror=...> 原样保存（未被预转义）且响应不含 client_id；前端浏览器实测：注入载荷 imgX=0 / scriptNodes=0 / window.__xssFired 未定义 / 载荷只以文本呈现（React 默认转义），真人填写表单提交 -> 「留言已提交」+ 列表新增 + 库中回读，再提交第 4 次 -> 界面显示「提交太频繁：留言太频繁，请 574 秒后再试」；seed_guestbook.py --reset 清掉验证垃圾、灌 3 条示例，页面回读「共 3 条」"
+        }
+      ],
       "issues": []
     },
     {

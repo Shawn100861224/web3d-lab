@@ -20,6 +20,7 @@ export default function App() {
             首页
           </NavLink>
           <NavLink to="/scenes">场景库</NavLink>
+          <NavLink to="/guestbook">留言板</NavLink>
         </nav>
       </header>
 

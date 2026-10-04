@@ -101,6 +101,39 @@ class EventAck(SQLModel):
     deduped: bool = False
 
 
+class GuestbookEntry(SQLModel, table=True):
+    """一条留言。正文按原样存（不预转义），转义交给渲染层——前端用 React 默认转义，
+    这样「存原文」和「显示安全」两件事各自可测。"""
+
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(max_length=40)
+    message: str = Field(max_length=600)
+    scene_slug: str | None = Field(default=None, max_length=80, index=True)
+    client_id: str = Field(max_length=64, index=True)
+    hidden: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=_utcnow, index=True)
+
+
+class GuestbookIn(SQLModel):
+    name: str = Field(min_length=1, max_length=40)
+    message: str = Field(min_length=1, max_length=600)
+    scene_slug: str | None = Field(default=None, max_length=80)
+    client_id: str = Field(min_length=8, max_length=64)
+
+
+class GuestbookPublic(SQLModel):
+    id: int
+    name: str
+    message: str
+    scene_slug: str | None
+    created_at: datetime
+
+
+class GuestbookList(SQLModel):
+    total: int
+    items: list[GuestbookPublic]
+
+
 class SceneStat(SQLModel):
     slug: str
     title: str | None = None

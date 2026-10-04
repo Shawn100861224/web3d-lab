@@ -686,3 +686,119 @@ button:active {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+
+/* ---------- 留言板 ---------- */
+.gb-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 16px 18px;
+  margin: 22px 0 8px;
+  max-width: 760px;
+}
+
+.gb-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.gb-row label,
+.gb-full {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  flex: 1 1 220px;
+}
+
+.gb-form input,
+.gb-form select,
+.gb-form textarea {
+  font: inherit;
+  color: var(--fg);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 9px 11px;
+  resize: vertical;
+}
+
+.gb-form input:focus,
+.gb-form select:focus,
+.gb-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.gb-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gb-form button {
+  background: #0d2a3a;
+  border-color: #2b5a76;
+  color: #dff3ff;
+  padding: 9px 18px;
+}
+
+.gb-form button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.note--ok {
+  color: var(--ok);
+}
+
+.gb-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 760px;
+}
+
+.gb-list li {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 12px 16px;
+}
+
+.gb-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.gb-meta strong {
+  color: var(--fg);
+  font-size: 0.9rem;
+}
+
+.gb-meta a {
+  color: var(--accent);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.gb-list p {
+  margin: 8px 0 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

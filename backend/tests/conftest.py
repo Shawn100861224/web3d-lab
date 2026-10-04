@@ -20,7 +20,7 @@ from sqlmodel import Session, delete  # noqa: E402
 
 from app.db import engine, init_db  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import PageView, Scene  # noqa: E402
+from app.models import GuestbookEntry, PageView, Scene  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -29,6 +29,7 @@ def clean_db():
     with Session(engine) as session:
         session.exec(delete(Scene))
         session.exec(delete(PageView))
+        session.exec(delete(GuestbookEntry))
         session.commit()
     yield
 

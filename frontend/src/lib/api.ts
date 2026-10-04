@@ -143,3 +143,46 @@ export function trackEvent(event: TrackedEvent, path: string, sceneSlug?: string
 export function fetchStats(days = 14): Promise<Stats> {
   return getJson<Stats>(`/api/stats?days=${days}`)
 }
+
+
+// ---------- 留言板 ----------
+
+export type GuestbookEntry = {
+  id: number
+  name: string
+  message: string
+  scene_slug: string | null
+  created_at: string
+}
+
+export type GuestbookList = { total: number; items: GuestbookEntry[] }
+
+export function fetchGuestbook(sceneSlug?: string | null, limit = 100): Promise<GuestbookList> {
+  const qs = new URLSearchParams({ limit: String(limit) })
+  if (sceneSlug) qs.set('scene_slug', sceneSlug)
+  return getJson<GuestbookList>(`/api/guestbook?${qs}`)
+}
+
+/** 提交留言。429 时抛 ApiError(status=429)，由页面提示限流秒数。 */
+export async function postGuestbook(input: {
+  name: string
+  message: string
+  scene_slug?: string | null
+}): Promise<GuestbookEntry> {
+  const res = await fetch('/api/guestbook', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...input, scene_slug: input.scene_slug ?? null, client_id: getClientId() }),
+  })
+  if (!res.ok) {
+    let detail = `${res.status} ${res.statusText}`
+    try {
+      const doc = (await res.json()) as { detail?: string }
+      if (doc.detail) detail = doc.detail
+    } catch {
+      /* 非 JSON 响应 */
+    }
+    throw new ApiError(res.status, detail)
+  }
+  return (await res.json()) as GuestbookEntry
+}

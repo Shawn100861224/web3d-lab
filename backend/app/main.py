@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 
 from .config import APP_NAME, APP_VERSION, CORS_ORIGINS, DB_PATH
 from .db import init_db
-from .routers import events, scenes
+from .routers import events, guestbook, scenes
 
 STARTED_AT = time.time()
 
@@ -37,6 +37,7 @@ app.add_middleware(
 
 app.include_router(scenes.router)
 app.include_router(events.router)
+app.include_router(guestbook.router)
 
 
 @app.get("/api/health")
