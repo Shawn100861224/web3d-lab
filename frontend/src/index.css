@@ -1,0 +1,96 @@
+:root {
+  --bg: #0d0f13;
+  --panel: #151922;
+  --line: #242b38;
+  --fg: #e8ecf3;
+  --muted: #8b95a7;
+  --ok: #3ddc97;
+  --bad: #ff6b6b;
+  color-scheme: dark;
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans SC",
+    "Microsoft YaHei", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.85em;
+  background: #1d2230;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.scaffold {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px;
+}
+
+.scaffold h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 6px 0 32px;
+  color: var(--muted);
+}
+
+.card {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+
+.card h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card--ok {
+  border-color: #1f5c45;
+}
+
+.card--ok > p:first-of-type {
+  color: var(--ok);
+}
+
+.card--error {
+  border-color: #6b2b2b;
+}
+
+.card--error > p:first-of-type {
+  color: var(--bad);
+}
+
+.card dl {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 6px 16px;
+  margin: 16px 0 0;
+}
+
+.card dt {
+  color: var(--muted);
+}
+
+.card dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}

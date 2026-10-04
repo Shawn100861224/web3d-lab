@@ -1,0 +1,95 @@
+{
+  "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
+  "stage": "模块开发",
+  "created": "2026-10-05 00:16",
+  "updated": "2026-10-05 00:29",
+  "issues": [],
+  "blockers": [],
+  "e2e": {
+    "status": "pending",
+    "notes": []
+  },
+  "modules": [
+    {
+      "name": "脚手架",
+      "status": "done",
+      "attempts": 1,
+      "fails": 0,
+      "notes": [
+        {
+          "at": "2026-10-05 00:22",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:29",
+          "text": "通过：backend: pytest tests -q -> 3 passed；uvicorn 实起后 curl /api/health -> HTTP 200 {\"status\":\"ok\",\"service\":\"web3d-lab API\",\"version\":\"0.1.0\",\"db\":\"web3d.db\"}；frontend: npm run build -> tsc -b + vite build OK (dist/index.html 0.70kB, index.js 221KB)；浏览器 http://localhost:5173 渲染出「✓ 链路正常」并列出后端 version/db/uptime（vite 代理 /api -> 127.0.0.1:8000 实测 200）"
+        }
+      ],
+      "issues": []
+    },
+    {
+      "name": "场景元数据API",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "3DGS查看器页",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "场景库与路由",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "访问统计",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "留言板",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "个人主页与方法对比",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "训练管线",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    },
+    {
+      "name": "部署",
+      "status": "pending",
+      "attempts": 0,
+      "fails": 0,
+      "notes": [],
+      "issues": []
+    }
+  ]
+}
