@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 00:30",
+  "updated": "2026-10-05 00:47",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -46,10 +46,19 @@
     },
     {
       "name": "3DGS查看器页",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-05 00:30",
+          "text": "第 1 次尝试开始"
+        },
+        {
+          "at": "2026-10-05 00:47",
+          "text": "通过：tsc -p tsconfig.app.json --noEmit 无错；npm run build 通过（dist js 3.30MB，含 three+spark）；浏览器 127.0.0.1:5173/?scene=robot-head -> DOM 钩子 #viewer-state: status=ready splats=45401 loadMs=526 fps=76~147；截图像素核验 scripts/check_render.py -> 亮像素 9.88%、重心(0.49,0.45)、std 40.4 = 渲染有效；自动巡航 3 次采样相机 x: -0.530 -> -0.965 -> -1.386（在转）；滚轮事件使 z 4.628 -> 3.405（缩放生效）；4 个示例场景机器人头/壁炉/卧室/山谷均 status=ready 且 bbox 正常（山谷 916x342x415，按宽高比取景后亮像素 0.86%->4.58%）；错误路径 ?scene=desk-chair 显示「资产加载失败：Invalid gzip header」+ 路径提示 + 面板状态=加载失败"
+        }
+      ],
       "issues": []
     },
     {

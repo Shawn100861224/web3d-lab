@@ -53,7 +53,42 @@ cd D:/lab/web3d-lab/backend && .venv/Scripts/python.exe -m uvicorn app.main:app 
 cd D:/lab/web3d-lab/frontend && npm run dev
 ```
 
-自检：浏览器开 http://localhost:5173 ，页面应显示「✓ 链路正常」并列出后端 version / db / uptime。
+自检：浏览器开 http://127.0.0.1:5173/?scene=robot-head ，应看到左侧视口里可旋转的 3DGS 场景 + 右侧指标面板。
+
+## 前端验收钩子
+
+查看器把实时状态镜像到 DOM 的 `#viewer-state`（`data-status` / `data-splats` / `data-fps` /
+`data-camera` / `data-extent` / `data-bbox` / `data-error`），Playwright 与脚本用它断言，
+不用去猜画面。相关脚本：`frontend/scripts/check_render.py`（截图像素级判空画布）。
+
+## 示例资产（frontend/public/demo/）
+
+4 个示例 `.spz` 共约 19 MB，来自 spark 官方示例清单（`sparkjs.dev` 的
+`examples/assets.json`），用途是「先把链路跑通」，模块 8 会用自训场景替换掉最显眼的位置。
+重新拉取用 `frontend/scripts/fetch-demo-assets.sh`（**必须走 Clash 代理**，直连 sparkjs.dev 速度为 0）。
+
+| 文件 | 点数 | 包围盒（世界单位） | 实测 |
+|---|---|---|---|
+| `robot-head.spz` | 45,401 | 单物体 | 加载 0.5s，headless 下 76–147 FPS |
+| `fireplace.spz` | 301,000 | 8.2×6.5×7.0 | 正常 |
+| `painted-bedroom.spz` | 500,000 | 10.3×7.3×11.5 | 正常 |
+| `valley.spz` | 500,000 | 915.9×341.6×414.8 | 正常，需按宽高比取景 |
+
+**踩过的坑（模块 8 导出 .spz 时必看）**：`snow-street.spz`（官方示例之一，981,908 点）
+在 spark 2.3.1 下 `numSplats` 能解析成 981,908，但 `getBoundingBox()` 返回**空盒**
+（size 全为 ±Infinity）、画面全黑。解压后对比头部发现它与其他文件不同：
+
+```
+NGSP v2 头：magic(4) version(4) numPoints(4) shDegree(1) fractionalBits(1) flags(1) reserved(1)
+robot-head       sh=3  fractionalBits=12   ← 正常
+valley/fireplace sh=0  fractionalBits=12   ← 正常
+snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
+```
+
+结论：**导出自训场景时用 fractionalBits=12**（gsplat / spark `writeSpz` 的默认值），
+不要用 6。查看器里已对退化 bbox 做了兜底（退回半径 1 的机位），但兜底救不回数据本身。
+诊断脚本：`frontend/scripts/inspect_spz.mjs`（离线读点位）、`frontend/scripts/check_render.py`
+（对截图做像素级「非空画布」判定）。
 
 ## 新会话怎么接手（重要）
 
