@@ -802,3 +802,346 @@ button:active {
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
+
+
+/* ---------- 关于我 / 方法对比 ---------- */
+.about {
+  padding: 34px clamp(16px, 3vw, 40px) 48px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+ul.clean {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.75;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+ul.clean li::marker {
+  color: var(--accent);
+}
+
+.def {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 16px 18px;
+}
+
+.def h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.def dl {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.def dt {
+  color: var(--accent);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.def dd {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 6px;
+}
+
+.rows .row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rows .row:last-child {
+  border-bottom: none;
+}
+
+.rows .when {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  line-height: 1.6;
+}
+
+.rows h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.rows .tagline {
+  margin-left: 10px;
+  font-size: 0.74rem;
+  color: var(--accent);
+  border: 1px solid #2b4a5e;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+
+.rows p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 0.9rem;
+}
+
+.about .card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 16px 18px;
+}
+
+.about .card h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.about .card ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+/* ---------- 对比表 ---------- */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  margin-top: 22px;
+}
+
+table.cmp {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 1080px;
+  font-size: 0.84rem;
+}
+
+table.cmp th,
+table.cmp td {
+  text-align: left;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+table.cmp thead th {
+  position: sticky;
+  top: 0;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+table.cmp tbody th {
+  white-space: nowrap;
+}
+
+table.cmp tbody th b {
+  display: block;
+}
+
+table.cmp .venue {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.74rem;
+}
+
+table.cmp td {
+  color: var(--muted);
+}
+
+table.cmp td.mine {
+  color: var(--fg);
+  min-width: 240px;
+}
+
+table.cmp tbody tr:hover {
+  background: rgba(98, 208, 255, 0.04);
+}
+
+/* ---------- 项目雷达 ---------- */
+.radar-stats {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+
+.radar-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.radar-stats b {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 1.35rem;
+  color: var(--accent);
+}
+
+.radar-stats span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.radar-tools {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.radar-tools input[type='search'],
+.radar-tools select {
+  font: inherit;
+  color: var(--fg);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 8px 11px;
+}
+
+.radar-tools input[type='search'] {
+  flex: 1 1 280px;
+}
+
+.radar-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.radar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radar-list li {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 12px 15px;
+}
+
+.radar-main {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.radar-name {
+  color: var(--fg);
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.9rem;
+}
+
+.radar-name:hover {
+  color: var(--accent);
+}
+
+.tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #2b4a5e;
+  color: var(--accent);
+}
+
+.tag--hot {
+  border-color: #6b4a1f;
+  color: #ffb96a;
+}
+
+.tag--muted {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.radar-desc {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.radar-why {
+  margin: 7px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+
+.radar-install {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.radar-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+@media (max-width: 900px) {
+  .two-col {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rows .row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

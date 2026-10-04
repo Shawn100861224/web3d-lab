@@ -46,9 +46,12 @@ export default function HomePage() {
           <Link to="/scenes" className="btn btn--primary">
             进入场景库
           </Link>
-          <a className="btn" href="https://github.com/sparkjsdev/spark" target="_blank" rel="noreferrer">
-            渲染器 Spark
-          </a>
+          <Link to="/about" className="btn">
+            关于我
+          </Link>
+          <Link to="/methods" className="btn">
+            3DGS 方法对比
+          </Link>
         </div>
       </header>
 
