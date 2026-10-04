@@ -37,7 +37,7 @@ export type RadarData = {
 }
 
 export async function fetchRadar(): Promise<RadarData> {
-  const res = await fetch('/radar.json')
+  const res = await fetch(`${import.meta.env.BASE_URL}radar.json`)
   if (!res.ok) throw new Error(`读取 radar.json 失败：HTTP ${res.status}`)
   return (await res.json()) as RadarData
 }

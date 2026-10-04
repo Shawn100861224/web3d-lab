@@ -70,7 +70,12 @@ export default function ViewerPage() {
   }, [live.status, slug])
 
   const pct = Math.round(live.progress * 100)
-  const assetUrl = scene?.asset_url ?? `/demo/${slug}.spz`
+  // 数据里的 asset_url 是后端视角的绝对路径（/demo/x.splat）；子路径部署时要补上 base，
+  // 否则浏览器会去站点根目录找，直接 404。
+  const rawAsset = scene?.asset_url ?? `/demo/${slug}.splat`
+  const assetUrl = rawAsset.startsWith('/')
+    ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${rawAsset}`
+    : rawAsset
 
   return (
     <div className="page">

@@ -10,7 +10,15 @@ export default function SceneCard({ scene }: Props) {
     <Link to={`/scenes/${scene.slug}`} className="card-scene">
       <div className="thumb">
         {scene.thumbnail_url ? (
-          <img src={scene.thumbnail_url} alt={`${scene.title} 的渲染缩略图`} loading="lazy" />
+          <img
+            src={
+              scene.thumbnail_url.startsWith('/')
+                ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${scene.thumbnail_url}`
+                : scene.thumbnail_url
+            }
+            alt={`${scene.title} 的渲染缩略图`}
+            loading="lazy"
+          />
         ) : (
           <div className="thumb-empty">暂无缩略图</div>
         )}

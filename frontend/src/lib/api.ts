@@ -95,7 +95,8 @@ let fallbackCache: Scene[] | null = null
 
 async function loadFallbackScenes(): Promise<Scene[]> {
   if (fallbackCache) return fallbackCache
-  const res = await fetch('/scenes-fallback.json')
+  // BASE_URL 由 vite 的 base 决定：子路径部署时资源在 /<repo>/schemes-fallback.json
+  const res = await fetch(`${import.meta.env.BASE_URL}scenes-fallback.json`)
   if (!res.ok) throw new Error(`静态兜底数据缺失：HTTP ${res.status}`)
   const doc = (await res.json()) as FallbackFile
   fallbackCache = doc.items

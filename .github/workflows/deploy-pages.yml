@@ -1,0 +1,56 @@
+name: Deploy frontend to GitHub Pages
+
+# 触发：推 main 分支且改动涉及前端/工作流，或在 Actions 页手动点。
+# 前置：仓库 Settings → Pages → Source 选 "GitHub Actions"。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install deps
+        working-directory: frontend
+        run: npm ci
+
+      # 仓库名即子路径：/web3d-lab/
+      - name: Build (static mode)
+        working-directory: frontend
+        run: bash scripts/build-for-pages.sh "/${GITHUB_REPOSITORY#*/}/"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
