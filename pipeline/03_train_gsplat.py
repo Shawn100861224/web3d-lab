@@ -1,0 +1,393 @@
+#!/usr/bin/env python3
+"""03 —— 用 gsplat 的 CUDA 光栅化核训练 3DGS（自写精简版）。
+
+为什么不用 gsplat 仓库里的 examples/simple_trainer.py：它的源码包在本机反复下载被截断，
+而且拖着 tyro / viser / torchmetrics / fused-ssim 一堆依赖。这条链路的目的是「跑通」，
+所以这里只依赖 torch + gsplat + numpy + Pillow，把 3DGS 的核心（可微光栅化 + 稠密化 +
+SH 渐进升阶）自己写清楚，指标与导出都自己控制。
+
+    python 03_train_gsplat.py --data ~/web3d/data/toy40 --steps 7000 --sh-degree 3
+
+产出：
+    <data>/train/ckpt_<steps>.ply      标准 3DGS PLY（Spark 可直接加载）
+    <data>/train/metrics.json          训练耗时 / 显存峰值 / PSNR（含留出视角）
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import time
+from pathlib import Path
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+from PIL import Image
+
+try:
+    from gsplat import rasterization, export_splats
+except ImportError as exc:  # pragma: no cover
+    raise SystemExit(
+        "gsplat 未安装或导入失败（需要先 source ~/web3d/env-gs.sh 让 CUDA_HOME 指向拼装好的工具链）"
+    ) from exc
+
+
+# --------------------------------------------------------------------------- #
+# COLMAP 文本模型解析（02 脚本已用 model_converter 转成 TXT）
+# --------------------------------------------------------------------------- #
+
+def read_colmap_txt(sparse_dir: Path) -> tuple[dict, list[dict], np.ndarray, np.ndarray]:
+    cameras: dict[int, dict] = {}
+    for line in (sparse_dir / "cameras.txt").read_text().splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        parts = line.split()
+        cam_id = int(parts[0])
+        model = parts[1]
+        w, h = int(parts[2]), int(parts[3])
+        params = [float(x) for x in parts[4:]]
+        if model == "OPENCV":
+            fx, fy, cx, cy = params[:4]
+        elif model in ("PINHOLE", "SIMPLE_PINHOLE"):
+            if model == "PINHOLE":
+                fx, fy, cx, cy = params[:4]
+            else:
+                fx = fy = params[0]
+                cx, cy = params[1], params[2]
+        else:  # RADIAL / 其它：取前四个当 fx,fy,cx,cy
+            fx, fy, cx, cy = params[:4]
+        cameras[cam_id] = {"w": w, "h": h, "fx": fx, "fy": fy, "cx": cx, "cy": cy}
+
+    images: list[dict] = []
+    lines = [l for l in (sparse_dir / "images.txt").read_text().splitlines() if l.strip() and not l.startswith("#")]
+    for i in range(0, len(lines), 2):  # 奇数行是 2D 观测，跳过
+        parts = lines[i].split()
+        qvec = np.array([float(x) for x in parts[1:5]])  # w x y z
+        tvec = np.array([float(x) for x in parts[5:8]])
+        cam_id = int(parts[8])
+        name = parts[9]
+        images.append({"qvec": qvec, "tvec": tvec, "cam_id": cam_id, "name": name})
+
+    xyz, rgb = [], []
+    for line in (sparse_dir / "points3D.txt").read_text().splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        parts = line.split()
+        xyz.append([float(parts[1]), float(parts[2]), float(parts[3])])
+        rgb.append([int(parts[4]), int(parts[5]), int(parts[6])])
+    return cameras, images, np.array(xyz, dtype=np.float32), np.array(rgb, dtype=np.uint8)
+
+
+def qvec_to_rotmat(q: np.ndarray) -> np.ndarray:
+    w, x, y, z = q
+    return np.array(
+        [
+            [1 - 2 * y * y - 2 * z * z, 2 * x * y - 2 * w * z, 2 * x * z + 2 * w * y],
+            [2 * x * y + 2 * w * z, 1 - 2 * x * x - 2 * z * z, 2 * y * z - 2 * w * x],
+            [2 * x * z - 2 * w * y, 2 * y * z + 2 * w * x, 1 - 2 * x * x - 2 * y * y],
+        ],
+        dtype=np.float32,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# 损失 / 指标
+# --------------------------------------------------------------------------- #
+
+def ssim_simple(a: torch.Tensor, b: torch.Tensor, window: int = 11) -> torch.Tensor:
+    """可微 SSIM（高斯窗，通道平均）。用不到 torchvision/metrics 的额外依赖。"""
+    coords = torch.arange(window, dtype=a.dtype, device=a.device) - window // 2
+    g = torch.exp(-(coords**2) / (2 * 1.5**2))
+    g = (g / g.sum()).view(1, 1, 1, window)
+    pad = window // 2
+    mu_a = F.conv2d(a, g.expand(3, 1, 1, window), padding=(0, pad), groups=3)
+    mu_a = F.conv2d(mu_a, g.transpose(-1, -2).expand(3, 1, window, 1), padding=(pad, 0), groups=3)
+    mu_b = F.conv2d(b, g.expand(3, 1, 1, window), padding=(0, pad), groups=3)
+    mu_b = F.conv2d(mu_b, g.transpose(-1, -2).expand(3, 1, window, 1), padding=(pad, 0), groups=3)
+    sigma_a = F.conv2d(a * a, g.expand(3, 1, 1, window), padding=(0, pad), groups=3)
+    sigma_a = F.conv2d(sigma_a, g.transpose(-1, -2).expand(3, 1, window, 1), padding=(pad, 0), groups=3) - mu_a**2
+    sigma_b = F.conv2d(b * b, g.expand(3, 1, 1, window), padding=(0, pad), groups=3)
+    sigma_b = F.conv2d(sigma_b, g.transpose(-1, -2).expand(3, 1, window, 1), padding=(pad, 0), groups=3) - mu_b**2
+    sigma_ab = F.conv2d(a * b, g.expand(3, 1, 1, window), padding=(0, pad), groups=3)
+    sigma_ab = F.conv2d(sigma_ab, g.transpose(-1, -2).expand(3, 1, window, 1), padding=(pad, 0), groups=3) - mu_a * mu_b
+    c1, c2 = 0.01**2, 0.03**2
+    s = ((2 * mu_a * mu_b + c1) * (2 * sigma_ab + c2)) / ((mu_a**2 + mu_b**2 + c1) * (sigma_a + sigma_b + c2))
+    return s.mean()
+
+
+def psnr(a: torch.Tensor, b: torch.Tensor) -> float:
+    mse = F.mse_loss(a.clamp(0, 1), b.clamp(0, 1))
+    return float(10 * torch.log10(1.0 / mse.clamp_min(1e-12)))
+
+
+def rgb_to_sh_dc(rgb: torch.Tensor) -> torch.Tensor:
+    return (rgb - 0.5) / 0.28209479177387814
+
+
+# --------------------------------------------------------------------------- #
+# 主流程
+# --------------------------------------------------------------------------- #
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data", required=True, help="COLMAP 数据集目录（含 images/ 与 sparse/0/）")
+    ap.add_argument("--steps", type=int, default=7000)
+    ap.add_argument("--sh-degree", type=int, default=3)
+    ap.add_argument("--holdout", type=int, default=4, help="留出多少个视角只做评估")
+    ap.add_argument("--down", type=int, default=2, help="图像降采样倍数（8GB 显存建议 2）")
+    ap.add_argument("--lr-pos", type=float, default=1.6e-4)
+    ap.add_argument("--seed", type=int, default=0)
+    args = ap.parse_args()
+
+    torch.manual_seed(args.seed)
+    data = Path(args.data).expanduser()
+    sparse = data / "sparse" / "0"
+    out_dir = data / "train"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    dev = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"设备：{dev}  |  gsplat 训练步数：{args.steps}  |  SH：{args.sh_degree}")
+
+    if not (sparse / "cameras.txt").exists():
+        raise SystemExit(
+            f"❌ {sparse} 里没有 TXT 模型（只有 .bin）。"
+            "跑一下： colmap model_converter --input_path <sparse/0> --output_path <sparse/0> --output_type TXT"
+        )
+    cameras, images, pts_xyz, pts_rgb = read_colmap_txt(sparse)
+    print(f"COLMAP：{len(images)} 个视角 / {len(pts_xyz)} 个稀疏点")
+
+    # ---- 读图（降采样） ----
+    views = []
+    for im in images:
+        img = Image.open(data / "images" / im["name"]).convert("RGB")
+        w, h = img.size
+        if args.down > 1:
+            img = img.resize((w // args.down, h // args.down), Image.LANCZOS)
+        views.append(
+            {
+                "image": torch.from_numpy(np.asarray(img, dtype=np.float32) / 255.0).to(dev),
+                "name": im["name"],
+            }
+        )
+    H, W = views[0]["image"].shape[:2]
+    print(f"训练分辨率：{W}x{H}（原图 {cameras[images[0]['cam_id']]['w']}x"
+          f"{cameras[images[0]['cam_id']]['h']}，降采样 x{args.down}）")
+
+    # ---- 相机 ----
+    viewmats = []
+    Ks = []
+    for im, v in zip(images, views):
+        cam = cameras[im["cam_id"]]
+        R = qvec_to_rotmat(im["qvec"])
+        t = im["tvec"].reshape(3, 1)
+        vm = np.concatenate([R, t], axis=1)  # x_cam = R x_world + t
+        viewmats.append(np.concatenate([vm, np.array([[0, 0, 0, 1]], np.float32)], axis=0))
+        s = args.down
+        Ks.append(
+            np.array(
+                [
+                    [cam["fx"] / s, 0, cam["cx"] / s],
+                    [0, cam["fy"] / s, cam["cy"] / s],
+                    [0, 0, 1],
+                ],
+                dtype=np.float32,
+            )
+        )
+    viewmats = torch.from_numpy(np.stack(viewmats)).to(dev)
+    Ks = torch.from_numpy(np.stack(Ks)).to(dev)
+
+    n_train = len(views) - args.holdout
+    train_idx = list(range(n_train))
+    test_idx = list(range(n_train, len(views)))
+    print(f"训练视角 {len(train_idx)} / 留出评估视角 {len(test_idx)}（{[views[i]['name'] for i in test_idx]}）")
+
+    # ---- 初始化高斯（来自稀疏点云） ----
+    means = torch.from_numpy(pts_xyz).to(dev).requires_grad_(True)
+    n = means.shape[0]
+    diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
+    init_scale = diag / math.sqrt(max(n, 1)) * 1.5
+    scales = torch.full((n, 3), math.log(init_scale), device=dev).requires_grad_(True)
+    quats = torch.zeros((n, 4), device=dev)
+    quats[:, 0] = 1.0
+    quats.requires_grad_(True)
+    # gsplat 的 rasterization 要求 opacities 形状是 (N,)，不是 (N,1)
+    opac_raw = torch.full((n,), -1.0, device=dev).requires_grad_(True)  # sigmoid(-1)=0.27
+    sh_dc = rgb_to_sh_dc(torch.from_numpy(pts_rgb.astype(np.float32) / 255.0).to(dev)).unsqueeze(1)
+    K_sh = (args.sh_degree + 1) ** 2
+    sh_rest = torch.zeros((n, K_sh - 1, 3), device=dev)
+    sh = torch.cat([sh_dc, sh_rest], dim=1).requires_grad_(True)
+
+    params = [
+        {"params": [means], "lr": args.lr_pos, "name": "means"},
+        {"params": [scales], "lr": 5e-3, "name": "scales"},
+        {"params": [quats], "lr": 1e-3, "name": "quats"},
+        {"params": [opac_raw], "lr": 5e-2, "name": "opacity"},
+        {"params": [sh], "lr": 2.5e-3, "name": "sh"},
+    ]
+    opt = torch.optim.Adam(params, eps=1e-15, betas=(0.9, 0.999))
+
+    grad_acc = torch.zeros(n, device=dev)
+    densify_from, densify_until = 500, int(args.steps * 0.6)
+    sh_deg_schedule = [(0, 1000), (3, 2000)]  # 到 1000 步升 1 阶，到 2000 步升满
+
+    if dev == "cuda":
+        torch.cuda.reset_peak_memory_stats()
+
+    t0 = time.time()
+    log = []
+    for step in range(1, args.steps + 1):
+        cur_deg = args.sh_degree
+        for thresh, deg in sh_deg_schedule:
+            if step < thresh and deg < cur_deg:
+                cur_deg = deg
+        idx = torch.randint(0, len(train_idx), (1,)).item()
+        cam = train_idx[idx]
+        gt = views[cam]["image"].permute(2, 0, 1).unsqueeze(0)
+
+        colors = sh[:, : (cur_deg + 1) ** 2, :]
+        renders, alphas, meta = rasterization(
+            means, quats, scales, torch.sigmoid(opac_raw), colors,
+            viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H,
+            sh_degree=cur_deg,
+        )
+        img = renders[0]
+        loss = 0.8 * F.l1_loss(img, gt) + 0.2 * (1 - ssim_simple(img, gt))
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+
+        with torch.no_grad():
+            if step >= densify_from:
+                grad_acc[: means.shape[0]] += torch.linalg.vector_norm(means.grad, dim=-1)
+            if step % 100 == 0:
+                log.append({"step": step, "loss": float(loss.item()), "splats": int(means.shape[0]),
+                            "psnr_train": psnr(img.detach(), gt), "sh_degree": cur_deg})
+                print(f"  step {step:5d} | loss {loss.item():.4f} | splats {means.shape[0]:6d} "
+                      f"| train PSNR {psnr(img.detach(), gt):5.2f} | SH{cur_deg}")
+
+        opt.step()
+
+        # ---- 稠密化（clone / split / prune）----
+        if densify_from <= step <= densify_until and step % 100 == 0:
+            with torch.no_grad():
+                vis = grad_acc / max(1, 100)
+                grad_acc.zero_()
+                dens = vis > 2e-4
+                big = torch.exp(scales).max(dim=-1).values * 0.01
+                split_mask = dens & (torch.exp(scales).max(dim=-1).values > big.median() * 2)
+                clone_mask = dens & ~split_mask
+                new_means, new_scales, new_quats, new_opac, new_sh = [], [], [], [], []
+                for mask, n_copy in ((clone_mask, 1), (split_mask, 2)):
+                    k = int(mask.sum())
+                    if k == 0:
+                        continue
+                    for _ in range(n_copy):
+                        new_means.append(means[mask].detach())
+                        s = scales[mask].detach()
+                        if n_copy == 2:
+                            s = s - math.log(1.6)
+                        new_scales.append(s)
+                        new_quats.append(quats[mask].detach())
+                        new_opac.append(opac_raw[mask].detach())
+                        new_sh.append(sh[mask].detach())
+                if new_means:
+                    keep = torch.sigmoid(opac_raw) > 0.005
+                    cap = 600_000
+                    idx_keep = torch.nonzero(keep).squeeze(-1)
+                    if idx_keep.shape[0] > cap:
+                        idx_keep = idx_keep[:cap]
+                    means = torch.nn.Parameter(torch.cat([means[idx_keep].detach()] + new_means))
+                    scales = torch.nn.Parameter(torch.cat([scales[idx_keep].detach()] + new_scales))
+                    quats = torch.nn.Parameter(torch.cat([quats[idx_keep].detach()] + new_quats))
+                    opac_raw = torch.nn.Parameter(torch.cat([opac_raw[idx_keep].detach()] + new_opac))
+                    sh = torch.nn.Parameter(torch.cat([sh[idx_keep].detach()] + new_sh))
+                    grad_acc = torch.zeros(means.shape[0], device=dev)
+                    opt = torch.optim.Adam(
+                        [
+                            {"params": [means], "lr": args.lr_pos},
+                            {"params": [scales], "lr": 5e-3},
+                            {"params": [quats], "lr": 1e-3},
+                            {"params": [opac_raw], "lr": 5e-2},
+                            {"params": [sh], "lr": 2.5e-3},
+                        ],
+                        eps=1e-15,
+                        betas=(0.9, 0.999),
+                    )
+
+    train_seconds = round(time.time() - t0, 1)
+    peak_mb = round(torch.cuda.max_memory_allocated() / 1024 / 1024, 1) if dev == "cuda" else 0.0
+
+    # ---- 留出视角评估 ----
+    eval_rows = []
+    with torch.no_grad():
+        for cam in test_idx:
+            gt = views[cam]["image"].permute(2, 0, 1).unsqueeze(0)
+            renders, _, _ = rasterization(
+                means, quats, scales, torch.sigmoid(opac_raw), sh,
+                viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H, sh_degree=args.sh_degree,
+            )
+            eval_rows.append(
+                {"name": views[cam]["name"], "psnr": psnr(renders[0], gt), "ssim": float(ssim_simple(renders[0], gt))}
+            )
+    mean_psnr = float(np.mean([r["psnr"] for r in eval_rows])) if eval_rows else float("nan")
+    mean_ssim = float(np.mean([r["ssim"] for r in eval_rows])) if eval_rows else float("nan")
+    print(f"\n留出视角评估：PSNR {mean_psnr:.2f} dB | SSIM {mean_ssim:.4f}")
+
+    # ---- 导出：存档用 PLY（满阶 SH）+ 上网用 .splat（每点 32B，Spark 直接可读）----
+    opac_final = torch.sigmoid(opac_raw).detach()
+    ply_path = out_dir / f"ckpt_{args.steps}.ply"
+    export_splats(
+        means=means.detach(), scales=scales.detach(), quats=quats.detach(),
+        opacities=opac_final,
+        sh0=sh[:, :1, :].detach(),          # (N, 1, 3)
+        shN=sh[:, 1:, :].detach(),          # (N, (K-1), 3)
+        format="ply", save_to=str(ply_path),
+    )
+    splat_path = out_dir / f"web_{args.steps}.splat"
+    if args.sh_degree == 0:
+        export_splats(
+            means=means.detach(), scales=scales.detach(), quats=quats.detach(),
+            opacities=opac_final, sh0=sh[:, :1, :].detach(), shN=sh[:, 1:, :].detach(),
+            format="splat", save_to=str(splat_path),
+        )
+    else:
+        # .splat 只有 SH0 颜色：把 DC 项拷进一个 SH0-only 张量再导
+        export_splats(
+            means=means.detach(), scales=scales.detach(), quats=quats.detach(),
+            opacities=opac_final, sh0=sh[:, :1, :].detach(), shN=torch.zeros_like(sh[:, 1:, :]),
+            format="splat", save_to=str(splat_path),
+        )
+    size_mb = round(ply_path.stat().st_size / 1024 / 1024, 2)
+    splat_mb = round(splat_path.stat().st_size / 1024 / 1024, 2)
+
+    metrics = {
+        "steps": args.steps,
+        "sh_degree": args.sh_degree,
+        "splats": int(means.shape[0]),
+        "train_images": len(train_idx),
+        "holdout_images": len(test_idx),
+        "resolution": [W, H],
+        "downsample": args.down,
+        "train_seconds": train_seconds,
+        "gpu_mem_mb": peak_mb,
+        "psnr": round(mean_psnr, 3),
+        "ssim": round(mean_ssim, 4),
+        "eval": eval_rows,
+        "ply": str(ply_path),
+        "ply_mb": size_mb,
+        "splat": str(splat_path),
+        "splat_mb": splat_mb,
+        "loss_curve": log[:: max(1, len(log) // 20)],
+        "device": torch.cuda.get_device_name(0) if dev == "cuda" else "cpu",
+    }
+    (out_dir / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"导出存档 PLY {ply_path}（{size_mb} MB）")
+    print(f"导出上网用 .splat {splat_path}（{splat_mb} MB，每点 32 字节）")
+    print(f"训练耗时 {train_seconds}s | 显存峰值 {peak_mb} MB | 高斯数 {int(means.shape[0])}")
+    print(f"指标写入 {out_dir/'metrics.json'}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

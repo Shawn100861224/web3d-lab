@@ -20,6 +20,13 @@ frontend/.vite/
 *.ply
 !frontend/public/demo/*.spz
 
+# 本机缓存（CUDA 工具链 deb、上游源码包；由 pipeline/00 与 README 说明来源）
+.cache/
+
+# 训练数据与产物（在 WSL 家目录，这里兜底）
+*.splat
+!frontend/public/demo/*.splat
+
 # 编辑器 / 系统
 .DS_Store
 Thumbs.db

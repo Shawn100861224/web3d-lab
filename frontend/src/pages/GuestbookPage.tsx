@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useBackend } from '../lib/useBackend'
 import {
   ApiError,
   fetchGuestbook,
@@ -17,7 +18,14 @@ import {
  * 后端按原文存储（含 `<script>`），转义发生在这一层——React 会把尖括号渲染成文本。
  * 模块 9 的 Playwright 会断言注入的 script 只以文本出现、DOM 中没有可执行节点。
  */
+function entryModifier(mode: ReturnType<typeof useBackend>, entries: GuestbookEntry[] | null) {
+  if (mode === 'offline') return <p className="note">静态模式下不读取留言列表。</p>
+  if (entries === null) return <p className="note">正在读取…</p>
+  return null
+}
+
 export default function GuestbookPage() {
+  const mode = useBackend()
   const [params] = useSearchParams()
   const sceneFilter = params.get('scene')
 
@@ -42,7 +50,7 @@ export default function GuestbookPage() {
 
   useEffect(() => {
     trackEvent('view', '/guestbook', sceneFilter)
-    reload()
+    if (mode !== 'offline') reload()
     fetchScenes({ limit: 100 })
       .then((doc) => setScenes(doc.items))
       .catch(() => setScenes([]))
@@ -81,6 +89,12 @@ export default function GuestbookPage() {
         </p>
       </header>
 
+      {mode === 'offline' ? (
+        <p className="note" id="gb-offline">
+          留言需要后端在线。当前这个站点是静态托管版本（没有常驻服务器），所以留言板暂时不可写；
+          场景库、3DGS 查看器、方法对比与关于我都不受影响。
+        </p>
+      ) : (
       <form className="gb-form" onSubmit={submit}>
         <div className="gb-row">
           <label>
@@ -133,6 +147,7 @@ export default function GuestbookPage() {
           </p>
         )}
       </form>
+      )}
 
       <h2 className="section-title">
         全部留言
@@ -148,7 +163,7 @@ export default function GuestbookPage() {
         共 {total} 条
       </p>
 
-      {entries === null && <p className="note">正在读取…</p>}
+      {entryModifier(mode, entries)}
       {entries !== null && entries.length === 0 && (
         <p className="note" id="gb-empty">
           还没有留言，做第一个吧。

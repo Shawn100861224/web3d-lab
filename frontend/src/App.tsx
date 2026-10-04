@@ -1,10 +1,14 @@
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useBackend } from './lib/useBackend'
+
 /**
  * 站点外壳：顶栏导航 + 内容区 + 页脚。各页面只负责自己的内容
  * （场景库、查看器、个人主页在 pages/ 下）。
  */
 export default function App() {
+  const mode = useBackend(true)
+
   return (
     <div className="shell">
       <header className="nav">
@@ -16,6 +20,11 @@ export default function App() {
           </span>
         </NavLink>
         <nav>
+          {mode === 'offline' && (
+            <span className="badge badge--warn" id="backend-mode" data-mode="offline">
+              静态模式
+            </span>
+          )}
           <NavLink to="/" end>
             首页
           </NavLink>

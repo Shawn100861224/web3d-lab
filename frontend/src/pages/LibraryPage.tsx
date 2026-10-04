@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import SceneCard from '../components/SceneCard'
 import { fetchScenes, trackEvent, type Scene } from '../lib/api'
+import { useBackend } from '../lib/useBackend'
 
 /** /scenes —— 场景库：卡片从 /api/scenes 拉取，点击进详情查看器。 */
 export default function LibraryPage() {
+  const mode = useBackend()
   const [scenes, setScenes] = useState<Scene[] | null>(null)
   const [total, setTotal] = useState(0)
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +38,11 @@ export default function LibraryPage() {
         </p>
       </header>
 
+      {mode === 'offline' && (
+        <p className="note" id="static-mode-note">
+          后端未连接（静态托管模式）：下面这份列表来自随站点打包的快照，查看器本身不受影响。
+        </p>
+      )}
       {error && <p className="note note--bad">读取场景列表失败：{error}</p>}
       {scenes === null && !error && <p className="note">正在从后端读取场景列表…</p>}
 

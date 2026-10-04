@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sparkline from '../components/Sparkline'
 import { fetchScenes, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
+import { useBackend } from '../lib/useBackend'
 
 /**
  * / —— 首页。模块 4 打通「精选场景 → 场景库 → 查看器」主链路，模块 5 在底部接了
  * 一张访问统计卡（数据来自后端 /api/stats）。完整的个人主页与方法对比在模块 7。
  */
 export default function HomePage() {
+  const mode = useBackend()
   const [featured, setFeatured] = useState<Scene[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
 
@@ -80,7 +82,11 @@ export default function HomePage() {
 
       <h2 className="section-title">访问统计</h2>
       {stats === null ? (
-        <p className="note">统计接口暂不可用（后端没起或 /api/stats 报错）。</p>
+        <p className="note" id="stats-offline">
+          {mode === 'offline'
+            ? '当前是静态托管模式（没有后端），访问统计与留言需要后端在线。场景库和查看器照常可用。'
+            : '统计接口暂不可用（后端没起或 /api/stats 报错）。'}
+        </p>
       ) : (
         <div className="stats-card" id="stats-card">
           <div className="stats-numbers">

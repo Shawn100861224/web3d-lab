@@ -1,4 +1,11 @@
-/** 与后端 /api 的契约层。字段名跟 backend/app/models.py 的 SceneBase 一一对应。 */
+/**
+ * 与后端 /api 的契约层。字段名跟 backend/app/models.py 的 SceneBase 一一对应。
+ *
+ * 线上可能只有静态托管（没后端），所以这里做了三层处理：
+ *  1. 所有请求都走 `apiUrl()`，部署时用 VITE_API_BASE 指到后端，本地留空走 vite 代理；
+ *  2. 场景「读」类接口在后端不可达时自动退回打包进站点的 scenes-fallback.json；
+ *  3. 写类接口（统计、留言）在后端已知离线时直接不打扰用户，失败也只记 console。
+ */
 
 export type Scene = {
   id: number
@@ -38,8 +45,65 @@ export class ApiError extends Error {
   }
 }
 
+const ENV = import.meta.env as Record<string, string | undefined>
+/** 部署时指向后端（如 https://api.example.com）；本地留空，走 vite 的 /api 代理 */
+export const API_BASE = (ENV.VITE_API_BASE ?? '').replace(/\/+$/, '')
+
+export function apiUrl(path: string): string {
+  return `${API_BASE}${path}`
+}
+
+let backendOnline: boolean | null = null
+const listeners = new Set<(v: boolean) => void>()
+
+function setBackendOnline(value: boolean): void {
+  if (backendOnline === value) return
+  backendOnline = value
+  for (const fn of listeners) fn(value)
+}
+
+/** null = 还没探测过 */
+export function isBackendOnline(): boolean | null {
+  return backendOnline
+}
+
+export function onBackendStatus(fn: (v: boolean) => void): () => void {
+  listeners.add(fn)
+  return () => listeners.delete(fn)
+}
+
+/** 启动时探测一次：2.5 秒不响应就算离线，页面照常可用（静态兜底）。 */
+export async function probeBackend(timeoutMs = 2500): Promise<boolean> {
+  try {
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs)
+    const res = await fetch(apiUrl('/api/health'), { signal: ctrl.signal })
+    clearTimeout(timer)
+    setBackendOnline(res.ok)
+    return res.ok
+  } catch {
+    setBackendOnline(false)
+    return false
+  }
+}
+
+// ---------- 静态兜底（后端不可达时用） ----------
+
+type FallbackFile = { items: Scene[] }
+
+let fallbackCache: Scene[] | null = null
+
+async function loadFallbackScenes(): Promise<Scene[]> {
+  if (fallbackCache) return fallbackCache
+  const res = await fetch('/scenes-fallback.json')
+  if (!res.ok) throw new Error(`静态兜底数据缺失：HTTP ${res.status}`)
+  const doc = (await res.json()) as FallbackFile
+  fallbackCache = doc.items
+  return fallbackCache
+}
+
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(path)
+  const res = await fetch(apiUrl(path))
   if (!res.ok) {
     let detail = res.statusText
     try {
@@ -53,17 +117,44 @@ async function getJson<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
-export function fetchScene(slug: string): Promise<Scene> {
-  return getJson<Scene>(`/api/scenes/${encodeURIComponent(slug)}`)
+export async function fetchScene(slug: string): Promise<Scene> {
+  try {
+    const scene = await getJson<Scene>(`/api/scenes/${encodeURIComponent(slug)}`)
+    setBackendOnline(true)
+    return scene
+  } catch (err) {
+    const offline = await loadFallbackScenes().catch(() => null)
+    const hit = offline?.find((s) => s.slug === slug)
+    if (hit) {
+      setBackendOnline(false)
+      return hit
+    }
+    throw err
+  }
 }
 
-export function fetchScenes(params: { technique?: string; featured?: boolean; limit?: number } = {}) {
+export async function fetchScenes(
+  params: { technique?: string; featured?: boolean; limit?: number } = {},
+): Promise<SceneList> {
   const qs = new URLSearchParams()
   if (params.technique) qs.set('technique', params.technique)
   if (params.featured !== undefined) qs.set('featured', String(params.featured))
   if (params.limit) qs.set('limit', String(params.limit))
   const suffix = qs.toString() ? `?${qs}` : ''
-  return getJson<SceneList>(`/api/scenes${suffix}`)
+  try {
+    const doc = await getJson<SceneList>(`/api/scenes${suffix}`)
+    setBackendOnline(true)
+    return doc
+  } catch (err) {
+    const all = await loadFallbackScenes().catch(() => null)
+    if (!all) throw err
+    setBackendOnline(false)
+    let items = all.filter((s) => s.published)
+    if (params.technique) items = items.filter((s) => s.technique === params.technique)
+    if (params.featured !== undefined) items = items.filter((s) => s.featured === params.featured)
+    if (params.limit) items = items.slice(0, params.limit)
+    return { total: items.length, items }
+  }
 }
 
 export function formatBytes(bytes: number): string {
@@ -121,6 +212,8 @@ export type TrackedEvent = 'view' | 'splat_load' | 'render_error'
 
 /** 上报事件。统计不该拖慢页面：失败只记 console，不抛给调用方。 */
 export function trackEvent(event: TrackedEvent, path: string, sceneSlug?: string | null): void {
+  // 已知后端离线（静态托管）时直接跳过：不让统计失败污染控制台，也不白等一次请求
+  if (backendOnline === false) return
   const body = JSON.stringify({
     event,
     path,
@@ -128,7 +221,7 @@ export function trackEvent(event: TrackedEvent, path: string, sceneSlug?: string
     client_id: getClientId(),
     referrer: document.referrer || null,
   })
-  void fetch('/api/events', {
+  void fetch(apiUrl('/api/events'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body,
@@ -142,6 +235,12 @@ export function trackEvent(event: TrackedEvent, path: string, sceneSlug?: string
 
 export function fetchStats(days = 14): Promise<Stats> {
   return getJson<Stats>(`/api/stats?days=${days}`)
+}
+
+/** 后端是否可用（给页面显示「静态模式」用） */
+export function backendMode(): 'online' | 'offline' | 'unknown' {
+  if (backendOnline === null) return 'unknown'
+  return backendOnline ? 'online' : 'offline'
 }
 
 
@@ -158,6 +257,10 @@ export type GuestbookEntry = {
 export type GuestbookList = { total: number; items: GuestbookEntry[] }
 
 export function fetchGuestbook(sceneSlug?: string | null, limit = 100): Promise<GuestbookList> {
+  // 静态模式：留言板没有后端就直说，不要抛异常让页面报错
+  if (backendOnline === false) {
+    return Promise.reject(new ApiError(503, '后端未连接（静态托管模式）'))
+  }
   const qs = new URLSearchParams({ limit: String(limit) })
   if (sceneSlug) qs.set('scene_slug', sceneSlug)
   return getJson<GuestbookList>(`/api/guestbook?${qs}`)
@@ -169,7 +272,7 @@ export async function postGuestbook(input: {
   message: string
   scene_slug?: string | null
 }): Promise<GuestbookEntry> {
-  const res = await fetch('/api/guestbook', {
+  const res = await fetch(apiUrl('/api/guestbook'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...input, scene_slug: input.scene_slug ?? null, client_id: getClientId() }),
