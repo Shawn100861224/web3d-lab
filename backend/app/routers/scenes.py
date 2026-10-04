@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
 from ..db import engine
-from ..models import Scene, SceneCreate, SceneList, ScenePublic
+from ..models import Scene, SceneCreate, SceneList, ScenePublic, SceneUpdate
 
 router = APIRouter(prefix="/api/scenes", tags=["scenes"])
 
@@ -48,6 +50,24 @@ def get_scene(slug: str) -> ScenePublic:
         row = session.exec(select(Scene).where(Scene.slug == slug)).first()
     if row is None:
         raise HTTPException(status_code=404, detail=f"scene '{slug}' not found")
+    return ScenePublic.model_validate(row)
+
+
+@router.patch("/{slug}", response_model=ScenePublic)
+def update_scene(slug: str, payload: SceneUpdate) -> ScenePublic:
+    """部分更新：训练管线重跑后用它回写新的指标/资产（不用删库重灌）。"""
+    with Session(engine) as session:
+        row = session.exec(select(Scene).where(Scene.slug == slug)).first()
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"scene '{slug}' not found")
+        changes = payload.model_dump(exclude_unset=True)
+        if not changes:
+            raise HTTPException(status_code=422, detail="没有提供任何要更新的字段")
+        row.sqlmodel_update(changes)
+        row.updated_at = datetime.now(timezone.utc)
+        session.add(row)
+        session.commit()
+        session.refresh(row)
     return ScenePublic.model_validate(row)
 
 

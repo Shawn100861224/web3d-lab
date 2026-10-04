@@ -91,9 +91,16 @@ def register(args, metrics: dict, dest: Path, fmt: str, size_mb: float, points: 
     with httpx.Client(base_url=args.api, timeout=20.0) as c:
         r = c.post("/api/scenes", json=payload)
         if r.status_code == 201:
-            print(f"✅ 已回写后端：GET {args.api}/api/scenes/{args.slug}")
+            print(f"✅ 新建并回写后端：GET {args.api}/api/scenes/{args.slug}")
         elif r.status_code == 409:
-            print("⚠️ 场景已存在（409）：资产已就位，指标需 PATCH 或先清库重灌")
+            # 已有这条场景 → 改成部分更新，让「重训后回写指标」是幂等的。
+            # 不做这一步就会出现"资产换了、数据库还是旧指标"的不一致（本机踩过）。
+            upd = {k: v for k, v in payload.items() if k != "slug"}
+            r2 = c.patch(f"/api/scenes/{args.slug}", json=upd)
+            if r2.status_code == 200:
+                print(f"✅ 场景已存在，改用 PATCH 更新指标：GET {args.api}/api/scenes/{args.slug}")
+            else:
+                print(f"⚠️ PATCH 失败 HTTP {r2.status_code}: {r2.text[:200]}")
         else:
             print(f"⚠️ 回写失败 HTTP {r.status_code}: {r.text[:200]}")
     print(f"\n网页验证：http://127.0.0.1:5173/scenes/{args.slug}")

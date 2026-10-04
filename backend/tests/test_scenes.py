@@ -87,3 +87,31 @@ def test_unpublished_excluded_by_default(client, scene_payload):
     assert client.get("/api/scenes").json()["total"] == 0
     drafts = client.get("/api/scenes", params={"published": False}).json()
     assert drafts["total"] == 1
+
+
+def test_patch_updates_metrics(client, scene_payload):
+    client.post("/api/scenes", json=scene_payload)
+    r = client.patch("/api/scenes/desk-chair", json={"psnr": 21.5, "num_points": 99999, "sh_degree": 0})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["psnr"] == 21.5
+    assert body["num_points"] == 99999
+    assert body["sh_degree"] == 0
+    # 没传的字段保持原样（部分更新，不是整体覆盖）
+    assert body["title"] == scene_payload["title"]
+    assert body["asset_url"] == scene_payload["asset_url"]
+
+
+def test_patch_unknown_slug_is_404(client):
+    r = client.patch("/api/scenes/nope", json={"psnr": 1.0})
+    assert r.status_code == 404
+
+
+def test_patch_empty_payload_is_422(client, scene_payload):
+    client.post("/api/scenes", json=scene_payload)
+    assert client.patch("/api/scenes/desk-chair", json={}).status_code == 422
+
+
+def test_patch_bad_type_is_422(client, scene_payload):
+    client.post("/api/scenes", json=scene_payload)
+    assert client.patch("/api/scenes/desk-chair", json={"num_points": "很多"}).status_code == 422

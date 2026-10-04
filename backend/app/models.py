@@ -60,6 +60,35 @@ class SceneCreate(SceneBase):
     """POST /api/scenes 的入参（训练管线模块 8 回写指标时也用它）。"""
 
 
+class SceneUpdate(SQLModel):
+    """PATCH 载荷：所有字段可选，只更新传来的那些。
+
+    为什么需要它：模块 8 的训练管线会反复重训同一个场景（改进稠密化、换分辨率），
+    每次跑完指标都变；只有 POST 的话第二次就会撞 409，只能删库重灌。
+    """
+
+    title: str | None = None
+    summary: str | None = None
+    technique: str | None = None
+    source: str | None = None
+    num_points: int | None = None
+    sh_degree: int | None = None
+    iterations: int | None = None
+    train_seconds: int | None = None
+    gpu_mem_mb: int | None = None
+    capture_device: str | None = None
+    capture_views: int | None = None
+    psnr: float | None = None
+    ssim: float | None = None
+    lpips: float | None = None
+    asset_url: str | None = None
+    asset_format: str | None = None
+    thumbnail_url: str | None = None
+    license: str | None = None
+    featured: bool | None = None
+    published: bool | None = None
+
+
 class ScenePublic(SceneBase):
     id: int
     created_at: datetime
