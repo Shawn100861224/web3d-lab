@@ -61,7 +61,18 @@
 - **本项目在用**：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`
 - **其他已有**：`3dgs-paper-reader`、`3dgs-method-compare`、`autonomous-dev-loop`（项目进度状态机）、`web3d-lab`（项目卡）、`skill-creator`、`git`、`best-minds`、`find-skills`、`github-repo-quickstart`、`web-deploy-github`
 
-## 六、下一步（按价值排序）
+## 六、本地运维（不进 README）
+
+| 事项 | 说明 |
+|---|---|
+| 起本地调试环境 | 双击项目根目录 **`start-local.bat`**：起后端 8000 + 前端 5173，等前端就绪后自动开浏览器（实测 16 秒） |
+| 停本地服务 | 双击 **`stop-local.bat`** |
+| 两个地址的区别 | **本地** `http://127.0.0.1:5173` —— 只在自己电脑上有效，**必须先起服务**；**线上** `https://shawn100861224.github.io/web3d-lab/` —— 给评审/别人看，不需要本机开机 |
+| 本地 vs 线上功能差异 | 本地连真后端（留言板可写、统计实时）；线上是静态演示版（留言板显示离线快照并标注边界） |
+| 线上打不开时 | 先试无痕窗口；再把 Clash Verge 从"全局模式"改回"规则模式"（global 会让浏览器把 github.io 也走代理） |
+| 写 .bat 的坑 | 批处理里**中途 `chcp 65001` 会让 cmd 解析器读乱后续行、脚本静默不执行** → 把 .bat 存成 **GBK(cp936)+CRLF** 即可（中文 Windows 控制台默认码页就是它）。另外中文文件名经自动化调用会编码错乱，脚本因此用 ASCII 名 |
+
+## 七、下一步（按价值排序）
 
 1. **拍照片**（只有本人能做）：手机环拍**单个物体或桌面** 30–50 张（多角度、相邻重叠 60%+、光照均匀、别拍糊、表面有纹理最好）
    → 给我照片后跑 `pipeline/run_all.sh`，把线上那个「合成采集（链路验证场景）」换成实拍场景

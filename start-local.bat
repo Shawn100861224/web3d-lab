@@ -51,7 +51,7 @@ goto wait
 :ready
 >>"%LOG%" echo 前端就绪，用时 %N% 秒
 echo 服务已就绪，打开浏览器...
-start "" "http://127.0.0.1:5173/scenes/robot-head"
+start "" "http://127.0.0.1:5173/"
 goto done
 
 :timeout
