@@ -1145,3 +1145,12 @@ table.cmp tbody tr:hover {
     gap: 6px;
   }
 }
+
+.foot a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.foot a:hover {
+  text-decoration: underline;
+}

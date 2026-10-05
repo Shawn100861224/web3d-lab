@@ -2,6 +2,9 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { useBackend } from './lib/useBackend'
 
+/** 公开联系方式（本人确认公开的邮箱） */
+const CONTACT_EMAIL = '18711505157@163.com'
+
 /**
  * 站点外壳：顶栏导航 + 内容区 + 页脚。各页面只负责自己的内容
  * （场景库、查看器、个人主页在 pages/ 下）。
@@ -40,10 +43,11 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        <span>郑州大学 · 双足实验室 3D 方向考核作品</span>
         <span>
-          Three.js + @sparkjsdev/spark · FastAPI + SQLModel
+          郑州大学 · 双足实验室 3D 方向考核作品 · 联系方式：
+          <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
         </span>
+        <span>Three.js + @sparkjsdev/spark · FastAPI + SQLModel</span>
       </footer>
     </div>
   )

@@ -97,6 +97,9 @@ export default function AboutPage() {
           方向选 <b>3D（三维视觉 / 三维重建）</b>；11v11 定为大二目标。
           学长给的第一学期任务是「打基础（C++ / Linux）+ 过考核」，这个网站在做后半件。
         </p>
+        <p className="lede">
+          联系方式：<a href="mailto:18711505157@163.com">18711505157@163.com</a>
+        </p>
       </header>
 
       <h2 className="section-title">01 / 方向：为什么是 3D</h2>
