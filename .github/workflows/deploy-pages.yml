@@ -40,9 +40,9 @@ jobs:
         working-directory: frontend
         run: bash scripts/build-for-pages.sh "/${GITHUB_REPOSITORY#*/}/"
 
+      # Pages 站点已用 gh api 创建（build_type=workflow）：workflow 里的 GITHUB_TOKEN
+      # 没有创建站点的权限（会报 Resource not accessible by integration），所以不在这里 enable。
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true   # 首次部署时若 Pages 未启用，自动启用（否则工作流会失败）
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
