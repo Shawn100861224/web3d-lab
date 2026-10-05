@@ -123,8 +123,9 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
   COLMAP 3.9.1（apt 版无 CUDA）/ **自拼的 CUDA 13.4 工具链**（`cuda-nvcc-13-4` + `libnvvm-13-4`，CUDA 13 把 nvvm 改名了）/
   gsplat 走 JIT 编译（缓存于 `~/.cache/torch_extensions`）。python 环境 `~/web3d/venv`，数据 `~/web3d/data/`。
 - 已装技能（见 `hermes skills list`）：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`。
-- Hermes(profile 10086) 主模型临时 = native `deepseek`/`deepseek-flash`（消耗 Harness 赠金，赠金优先于充值余额扣），
-  别名 `ofox` 可回切；**赠金 2026-10-06 21:00 过期**。
+- Hermes(profile 10086) 主模型 = native `deepseek`/`deepseek-flash`（走 `api.deepseek.com`，不需代理），别名 `ofox` 可回切。
+  **¥6 赠金已于 2026-10-05 全部用尽**（6.00 → 0.00，在 10/6 21:00 过期前烧完），账户余额 ¥26.23。
+  费用细节与省钱杠杆见 `HANDOFF.md` 第三节。
 - 本机：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB。
 - 网络要点（都踩过）：直连 `sparkjs.dev` 速度 0 → 必须走 Clash 代理；GitHub 直连慢（推 20MB 约 2 分钟）；
   npmmirror / 清华 PyPI 源反过来**要关代理**；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。
