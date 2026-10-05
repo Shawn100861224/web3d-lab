@@ -2,6 +2,13 @@ import { Link } from 'react-router-dom'
 import { formatCount } from '../lib/api'
 import type { Scene } from '../lib/api'
 
+/** 来源必须如实区分：自己拍的/自己训的 ≠ 官方示例 ≠ 公开数据集（别人拍的） */
+const SOURCE_LABEL: Record<string, string> = {
+  'self-trained': '本机自训',
+  sample: '官方示例',
+  'public-dataset': '公开数据集',
+}
+
 type Props = { scene: Scene }
 
 /** 场景库卡片：缩略图 + 标题 + 方法徽标 + 关键数字。 */
@@ -38,7 +45,7 @@ export default function SceneCard({ scene }: Props) {
           </div>
           <div>
             <dt>来源</dt>
-            <dd>{scene.source === 'sample' ? '官方示例' : '本机自训'}</dd>
+            <dd>{SOURCE_LABEL[scene.source] ?? scene.source}</dd>
           </div>
         </dl>
       </div>

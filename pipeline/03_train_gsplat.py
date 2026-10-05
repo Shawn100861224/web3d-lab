@@ -60,26 +60,36 @@ def read_colmap_txt(sparse_dir: Path) -> tuple[dict, list[dict], np.ndarray, np.
             fx, fy, cx, cy = params[:4]
         cameras[cam_id] = {"w": w, "h": h, "fx": fx, "fy": fy, "cx": cx, "cy": cy}
 
+    # 流式读：Mip-NeRF 360 的 images.txt 有 ~100 MB，read_text().splitlines() 会把
+    # 它展开成几百 MB 的 Python 字符串列表，WSL 里内存一紧张 GPU 分配就失败（踩过）。
     images: list[dict] = []
-    lines = [l for l in (sparse_dir / "images.txt").read_text().splitlines() if l.strip() and not l.startswith("#")]
-    for i in range(0, len(lines), 2):  # 奇数行是 2D 观测，跳过
-        parts = lines[i].split()
-        # 必须显式 float32：np.array([float(x)…]) 默认是 float64，
-        # 拼进 viewmat 后会整块变 double，gsplat 的 CUDA 核直接报
-        # "expected scalar type Float but found Double"。
-        qvec = np.array([float(x) for x in parts[1:5]], dtype=np.float32)  # w x y z
-        tvec = np.array([float(x) for x in parts[5:8]], dtype=np.float32)
-        cam_id = int(parts[8])
-        name = parts[9]
-        images.append({"qvec": qvec, "tvec": tvec, "cam_id": cam_id, "name": name})
+    with (sparse_dir / "images.txt").open(encoding="utf-8") as fh:
+        idx = -1
+        for raw in fh:
+            line = raw.strip()
+            if not line or line.startswith("#"):
+                continue
+            idx += 1
+            if idx % 2 == 1:  # 偶数行是 2D 观测，跳过
+                continue
+            parts = line.split()
+            # 必须显式 float32：np.array([float(x)…]) 默认是 float64，
+            # 拼进 viewmat 后会整块变 double，gsplat 的 CUDA 核直接报
+            # "expected scalar type Float but found Double"。
+            qvec = np.array([float(x) for x in parts[1:5]], dtype=np.float32)  # w x y z
+            tvec = np.array([float(x) for x in parts[5:8]], dtype=np.float32)
+            cam_id = int(parts[8])
+            name = parts[9]
+            images.append({"qvec": qvec, "tvec": tvec, "cam_id": cam_id, "name": name})
 
     xyz, rgb = [], []
-    for line in (sparse_dir / "points3D.txt").read_text().splitlines():
-        if line.startswith("#") or not line.strip():
-            continue
-        parts = line.split()
-        xyz.append([float(parts[1]), float(parts[2]), float(parts[3])])
-        rgb.append([int(parts[4]), int(parts[5]), int(parts[6])])
+    with (sparse_dir / "points3D.txt").open(encoding="utf-8") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip():
+                continue
+            parts = line.split()
+            xyz.append([float(parts[1]), float(parts[2]), float(parts[3])])
+            rgb.append([int(parts[4]), int(parts[5]), int(parts[6])])
     return cameras, images, np.array(xyz, dtype=np.float32), np.array(rgb, dtype=np.uint8)
 
 
@@ -140,6 +150,11 @@ def main() -> int:
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--holdout", type=int, default=4, help="留出多少个视角只做评估")
     ap.add_argument("--down", type=int, default=2, help="图像降采样倍数（8GB 显存建议 2）")
+    ap.add_argument("--max-splats", type=int, default=300_000,
+                    help="稠密化后的高斯数上限（8GB 显存建议 30–80 万）")
+    ap.add_argument("--max-init-points", type=int, default=0,
+                    help="初始化点数上限（0=全部）。公开数据集的稀疏点云常有几十万点，"
+                         "随机下采样可以控制显存与首轮耗时")
     ap.add_argument("--lr-pos", type=float, default=1.6e-4)
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
@@ -170,7 +185,10 @@ def main() -> int:
             img = img.resize((w // args.down, h // args.down), Image.LANCZOS)
         views.append(
             {
-                "image": torch.from_numpy(np.asarray(img, dtype=np.float32) / 255.0).to(dev),
+                # 刻意留在 CPU 且用 uint8：232 张以 float32 常驻要 ~750MB，
+                # uint8 只要 ~190MB（用时再转 float）。WDDM 下系统内存紧张会直接
+                # 导致 GPU 分配失败，所以这里省的不只是内存。
+                "image": torch.from_numpy(np.asarray(img, dtype=np.uint8)),
                 "name": im["name"],
             }
         )
@@ -222,7 +240,11 @@ def main() -> int:
     test_idx = list(range(n_train, len(views)))
     print(f"训练视角 {len(train_idx)} / 留出评估视角 {len(test_idx)}（{[views[i]['name'] for i in test_idx]}）")
 
-    # ---- 初始化高斯（来自稀疏点云） ----
+    # ---- 初始化高斯（来自稀疏点云，必要时下采样控显存） ----
+    if args.max_init_points and len(pts_xyz) > args.max_init_points:
+        sel = np.random.default_rng(args.seed).choice(len(pts_xyz), args.max_init_points, replace=False)
+        print(f"初始点云下采样：{len(pts_xyz)} → {len(sel)}（--max-init-points）")
+        pts_xyz, pts_rgb = pts_xyz[sel], pts_rgb[sel]
     means = torch.from_numpy(pts_xyz).to(dev).requires_grad_(True)
     n = means.shape[0]
     diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
@@ -263,7 +285,7 @@ def main() -> int:
                 cur_deg = deg
         idx = torch.randint(0, len(train_idx), (1,)).item()
         cam = train_idx[idx]
-        gt = views[cam]["image"].permute(2, 0, 1).unsqueeze(0)
+        gt = views[cam]["image"].permute(2, 0, 1).unsqueeze(0).to(dev).float() / 255.0
 
         colors = sh[:, : (cur_deg + 1) ** 2, :]
         renders, alphas, meta = rasterization(
@@ -325,7 +347,7 @@ def main() -> int:
                         new_sh.append(sh[split_mask].detach())
 
                 keep = (torch.sigmoid(opac_raw) > 0.005) & (max_scale < 0.15)
-                cap = 300_000
+                cap = args.max_splats
                 idx_keep = torch.nonzero(keep).squeeze(-1)
                 if idx_keep.shape[0] > cap:
                     # 超上限时按不透明度保留最"实"的那些
@@ -354,18 +376,25 @@ def main() -> int:
     peak_mb = round(torch.cuda.max_memory_allocated() / 1024 / 1024, 1) if dev == "cuda" else 0.0
 
     # ---- 留出视角评估 ----
+    # 本机（WSL+WDDM）实测：训练 5 步没问题，但紧接着的评估会在 320MB 的分配上 OOM
+    # （驱动报 5.1GB 空闲却分配失败，是这个组合的已知怪象）。先把训练期的缓存放掉，
+    # 每个视角评估完再放一次，能显著降低评估阶段的峰值。
+    torch.cuda.empty_cache()
     eval_rows = []
     with torch.no_grad():
         for cam in test_idx:
-            gt = views[cam]["image"].permute(2, 0, 1).unsqueeze(0)
+            gt = (views[cam]["image"].permute(2, 0, 1).unsqueeze(0).to(dev).float() / 255.0)
             renders, _, _ = rasterization(
                 means, quats, scales, torch.sigmoid(opac_raw), sh,
                 viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H, sh_degree=args.sh_degree,
             )
             ev = renders[0].permute(2, 0, 1).unsqueeze(0)
+            del renders
             eval_rows.append(
                 {"name": views[cam]["name"], "psnr": psnr(ev, gt), "ssim": float(ssim_simple(ev, gt))}
             )
+            del ev, gt
+            torch.cuda.empty_cache()
     mean_psnr = float(np.mean([r["psnr"] for r in eval_rows])) if eval_rows else float("nan")
     mean_ssim = float(np.mean([r["ssim"] for r in eval_rows])) if eval_rows else float("nan")
     print(f"\n留出视角评估：PSNR {mean_psnr:.2f} dB | SSIM {mean_ssim:.4f}")

@@ -25,15 +25,24 @@ function Row({ label, value, hint }: { label: string; value: string; hint?: stri
  */
 export default function MetricsPanel({ scene, live }: Props) {
   const declared = scene
-  const isPlaceholder = declared?.source === 'sample'
+  const isPlaceholder = declared?.source === 'sample' || declared?.source === 'public-dataset'
+  const sourceNote =
+    declared?.source === 'public-dataset'
+      ? '该场景来自公开数据集（Mip-NeRF 360），非本人拍摄，仅用于验证真实照片重建链路。'
+      : '该场景是上游官方示例，指标由来源方提供，非本人训练。'
 
   return (
     <aside className="panel">
       <div className="panel-block">
-        <h2>训练指标{isPlaceholder && <span className="badge">示例资产</span>}</h2>
-        {isPlaceholder && (
-          <p className="note">该场景是上游官方示例，指标由来源方提供，非本人训练。</p>
-        )}
+        <h2>
+          训练指标
+          {isPlaceholder && (
+            <span className="badge">
+              {declared?.source === 'public-dataset' ? '公开数据集' : '示例资产'}
+            </span>
+          )}
+        </h2>
+        {isPlaceholder && <p className="note">{sourceNote}</p>}
         <dl>
           <Row label="方法" value={declared?.technique ?? '—'} />
           <Row label="PSNR" value={declared?.psnr != null ? declared.psnr.toFixed(2) : '待回写'} />

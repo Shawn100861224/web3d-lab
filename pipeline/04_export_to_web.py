@@ -68,16 +68,17 @@ def register(args, metrics: dict, dest: Path, fmt: str, size_mb: float, points: 
     payload = {
         "slug": args.slug,
         "title": args.title,
-        "summary": f"Voronoi 纹理球 + 地面平板；{metrics['train_images']} 视角训练、"
-                   f"{metrics['holdout_images']} 视角留出评估，COLMAP + gsplat 全流程本机跑通。",
+        "summary": args.summary
+        or f"{metrics['train_images']} 视角训练、{metrics['holdout_images']} 视角留出评估，"
+           f"gsplat 全流程本机跑通（{metrics['train_seconds']}s / {metrics['gpu_mem_mb']}MB 显存）。",
         "technique": "3DGS",
-        "source": "self-trained",
+        "source": args.source,
         "num_points": points,
         "sh_degree": extra.get("sh_degree", 0),
         "iterations": metrics["steps"],
         "train_seconds": int(metrics["train_seconds"]),
         "gpu_mem_mb": int(metrics["gpu_mem_mb"]),
-        "capture_device": "合成采集（pipeline/01_make_synthetic_capture.py）",
+        "capture_device": args.capture_device,
         "capture_views": metrics["train_images"] + metrics["holdout_images"],
         "psnr": metrics.get("psnr"),
         "ssim": metrics.get("ssim"),
@@ -85,7 +86,7 @@ def register(args, metrics: dict, dest: Path, fmt: str, size_mb: float, points: 
         "asset_url": f"/demo/{dest.name}",
         "asset_format": fmt,
         "thumbnail_url": None,
-        "license": "自产数据（本机训练）",
+        "license": args.license,
         "featured": False,
     }
     with httpx.Client(base_url=args.api, timeout=20.0) as c:
@@ -112,6 +113,12 @@ def main() -> int:
     ap.add_argument("--data", required=True)
     ap.add_argument("--slug", default="toy-capture")
     ap.add_argument("--title", default="合成采集（链路验证场景）")
+    ap.add_argument("--source", default="self-trained",
+                    choices=["self-trained", "sample", "public-dataset"],
+                    help="来源必须如实标注：自己训的 / 官方示例 / 公开数据集（别人拍的）")
+    ap.add_argument("--license", default="自产数据（本机训练）")
+    ap.add_argument("--capture-device", default="合成采集（pipeline/01_make_synthetic_capture.py）")
+    ap.add_argument("--summary", default=None)
     ap.add_argument("--api", default="http://127.0.0.1:8000")
     ap.add_argument("--frontend", default="/mnt/d/lab/web3d-lab/frontend")
     ap.add_argument("--min-opacity", type=float, default=0.02)
