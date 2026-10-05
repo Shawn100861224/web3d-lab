@@ -40,7 +40,8 @@ export default function LibraryPage() {
 
       {mode === 'offline' && (
         <p className="note" id="static-mode-note">
-          后端未连接（静态托管模式）：下面这份列表来自随站点打包的快照，查看器本身不受影响。
+          本部署是<strong>静态演示版</strong>：下面这份列表来自随站点打包的场景快照。
+          查看器为纯前端实时渲染（Three.js + Spark），不依赖服务端，可正常使用。
         </p>
       )}
       {error && <p className="note note--bad">读取场景列表失败：{error}</p>}

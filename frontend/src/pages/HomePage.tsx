@@ -83,9 +83,14 @@ export default function HomePage() {
       <h2 className="section-title">访问统计</h2>
       {stats === null ? (
         <p className="note" id="stats-offline">
-          {mode === 'offline'
-            ? '当前是静态托管模式（没有后端），访问统计与留言需要后端在线。场景库和查看器照常可用。'
-            : '统计接口暂不可用（后端没起或 /api/stats 报错）。'}
+          {mode === 'offline' ? (
+            <>
+              访问统计与留言由后端服务记录（FastAPI + SQLModel + SQLite，36 项测试通过，代码见仓库）。
+              本页是<strong>静态演示版</strong>，因此统计数据在这里不可用 —— 场景库与 3DGS 查看器完全正常。
+            </>
+          ) : (
+            '统计接口暂不可用（后端没起或 /api/stats 报错）。'
+          )}
         </p>
       ) : (
         <div className="stats-card" id="stats-card">

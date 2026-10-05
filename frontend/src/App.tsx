@@ -21,8 +21,8 @@ export default function App() {
         </NavLink>
         <nav>
           {mode === 'offline' && (
-            <span className="badge badge--warn" id="backend-mode" data-mode="offline">
-              静态模式
+            <span className="badge badge--warn" id="backend-mode" data-mode="offline" title="本部署为静态演示版：场景渲染全部可用，访问统计与留言需要后端服务">
+              演示版
             </span>
           )}
           <NavLink to="/" end>

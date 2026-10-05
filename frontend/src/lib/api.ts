@@ -257,6 +257,15 @@ export type GuestbookEntry = {
 
 export type GuestbookList = { total: number; items: GuestbookEntry[] }
 
+export type GuestbookSnapshot = { total: number; items: GuestbookEntry[]; note?: string }
+
+/** 静态部署下的留言快照（只读）——让留言板不是一片空白，而是"示例数据 + 边界说明"。 */
+export async function fetchGuestbookSnapshot(): Promise<GuestbookSnapshot> {
+  const res = await fetch(`${import.meta.env.BASE_URL}guestbook-fallback.json`)
+  if (!res.ok) throw new Error(`留言快照缺失：HTTP ${res.status}`)
+  return (await res.json()) as GuestbookSnapshot
+}
+
 export function fetchGuestbook(sceneSlug?: string | null, limit = 100): Promise<GuestbookList> {
   // 静态模式：留言板没有后端就直说，不要抛异常让页面报错
   if (backendOnline === false) {

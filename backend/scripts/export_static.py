@@ -19,6 +19,7 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 OUT = BACKEND_DIR.parent / "frontend" / "public" / "scenes-fallback.json"
+GOUT = BACKEND_DIR.parent / "frontend" / "public" / "guestbook-fallback.json"
 PUBLIC_FIELDS = (
     "slug",
     "title",
@@ -71,12 +72,54 @@ def from_db() -> dict:
     return {"generated_from": "db", "items": items}
 
 
+def guestbook_from_http() -> dict:
+    import httpx
+
+    with httpx.Client(base_url="http://127.0.0.1:8000", timeout=10.0) as c:
+        doc = c.get("/api/guestbook", params={"limit": 20}).json()
+    return {"generated_from": "http", "total": doc["total"], "items": doc["items"]}
+
+
+def guestbook_from_db() -> dict:
+    sys.path.insert(0, str(BACKEND_DIR))
+    from sqlmodel import Session, select
+
+    from app.db import engine, init_db
+    from app.models import GuestbookEntry
+
+    init_db()
+    with Session(engine) as session:
+        rows = session.exec(
+            select(GuestbookEntry).where(GuestbookEntry.hidden == False)  # noqa: E712
+            .order_by(GuestbookEntry.created_at.desc()).limit(20)
+        ).all()
+    items = [
+        {
+            "id": r.id,
+            "name": r.name,
+            "message": r.message,
+            "scene_slug": r.scene_slug,
+            "created_at": str(r.created_at),
+        }
+        for r in rows
+    ]
+    return {"generated_from": "db", "total": len(items), "items": items}
+
+
 def main() -> int:
-    payload = from_http() if "--from-http" in sys.argv else from_db()
+    use_http = "--from-http" in sys.argv
+    payload = from_http() if use_http else from_db()
     payload["note"] = "静态兜底数据：后端不可达时前端读取它；由 backend/scripts/export_static.py 生成"
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"已写出 {OUT}（{len(payload['items'])} 个场景，来源 {payload['generated_from']}）")
+
+    # 留言板离线快照：让静态部署下的留言板不是一片空白，而是"示例留言 + 说明"
+    gb = guestbook_from_http() if use_http else guestbook_from_db()
+    gb["note"] = "静态部署下的留言快照（只读）：线上写入需要后端服务，本地/容器环境已实现"
+    GOUT.parent.mkdir(parents=True, exist_ok=True)
+    GOUT.write_text(json.dumps(gb, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"已写出 {GOUT}（{len(gb['items'])} 条留言快照，来源 {gb['generated_from']}）")
     return 0
 
 

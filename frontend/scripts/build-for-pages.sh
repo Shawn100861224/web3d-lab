@@ -23,11 +23,30 @@ VITE_BASE="$BASE" VITE_API_BASE="$API" npm run build
 cp dist/index.html dist/404.html
 echo "已生成 dist/404.html（SPA 回退）"
 
+# ---- 深链要返回 200，而不是 404 ----
+# GitHub Pages 对不存在的路径一律返回 404（再用 404.html 承载 SPA）：页面能渲染，
+# 但状态码难看，某些链接预览/校验会判失败。解法：为已知路由生成**真实目录**，
+# 每个目录里放一份 index.html —— 这样 /scenes/ 、/scenes/fireplace/ 都是 200。
+for r in scenes methods about guestbook; do
+  mkdir -p "dist/$r"
+  cp dist/index.html "dist/$r/index.html"
+done
+# 挑一个能用的解释器：Windows 上 python 是真的、python3 往往是商店别名占位符；
+# Ubuntu CI 上反过来（只有 python3）。所以先找 python，能用再退回 python3。
+PY_BIN="$(command -v python || command -v python3)"
+if ! "$PY_BIN" -c "pass" >/dev/null 2>&1; then PY_BIN="$(command -v python3)"; fi
+"$PY_BIN" scripts/make_deep_link_dirs.py dist
+
 # 确认兜底数据真的进了产物（没有它，纯静态模式下场景库会是空的）
 if [ -f dist/scenes-fallback.json ]; then
   echo "✅ dist/scenes-fallback.json 已打包（$(wc -c < dist/scenes-fallback.json) 字节）"
 else
   echo "⚠️ 缺少 dist/scenes-fallback.json —— 纯静态模式下场景库会空"
+fi
+if [ -f dist/guestbook-fallback.json ]; then
+  echo "✅ dist/guestbook-fallback.json 已打包（留言快照）"
+else
+  echo "⚠️ 缺少 dist/guestbook-fallback.json —— 静态模式下留言板会是空的"
 fi
 
 du -sh dist
