@@ -118,6 +118,17 @@ async function getJson<T>(path: string): Promise<T> {
   return (await res.json()) as T
 }
 
+/**
+ * 把后端/兜底数据里的站内绝对路径（如 `/demo/x.splat`）解析成当前部署下可用的地址。
+ * 子路径部署（GitHub Pages 的 /<repo>/）时必须补 base，否则会去站点根目录找 → 404。
+ */
+export function assetUrl(path: string | null | undefined): string {
+  if (!path) return ''
+  if (!path.startsWith('/')) return path
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  return `${base}${path}`
+}
+
 export async function fetchScene(slug: string): Promise<Scene> {
   try {
     const scene = await getJson<Scene>(`/api/scenes/${encodeURIComponent(slug)}`)

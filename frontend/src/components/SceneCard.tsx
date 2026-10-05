@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { formatCount } from '../lib/api'
+import { assetUrl, formatCount } from '../lib/api'
 import type { Scene } from '../lib/api'
 
 /** 来源必须如实区分：自己拍的/自己训的 ≠ 官方示例 ≠ 公开数据集（别人拍的） */
@@ -17,15 +17,7 @@ export default function SceneCard({ scene }: Props) {
     <Link to={`/scenes/${scene.slug}`} className="card-scene">
       <div className="thumb">
         {scene.thumbnail_url ? (
-          <img
-            src={
-              scene.thumbnail_url.startsWith('/')
-                ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${scene.thumbnail_url}`
-                : scene.thumbnail_url
-            }
-            alt={`${scene.title} 的渲染缩略图`}
-            loading="lazy"
-          />
+          <img src={assetUrl(scene.thumbnail_url)} alt={`${scene.title} 的渲染缩略图`} loading="lazy" />
         ) : (
           <div className="thumb-empty">暂无缩略图</div>
         )}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sparkline from '../components/Sparkline'
-import { fetchScenes, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
+import { assetUrl, fetchScenes, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
 import { useBackend } from '../lib/useBackend'
 
 /**
@@ -67,7 +67,7 @@ export default function HomePage() {
           {featured.map((s) => (
             <Link key={s.slug} to={`/scenes/${s.slug}`} className="feature">
               {s.thumbnail_url ? (
-                <img src={s.thumbnail_url} alt={`${s.title} 缩略图`} />
+                <img src={assetUrl(s.thumbnail_url)} alt={`${s.title} 缩略图`} />
               ) : (
                 <div className="thumb-empty">暂无缩略图</div>
               )}

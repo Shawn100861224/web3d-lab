@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import MetricsPanel from '../components/MetricsPanel'
 import SplatViewer, { type ViewerStats } from '../components/SplatViewer'
-import { ApiError, fetchScene, fetchStats, trackEvent, type Scene } from '../lib/api'
+import { ApiError, assetUrl as assetUrlOf, fetchScene, fetchStats, trackEvent, type Scene } from '../lib/api'
 
 export const EMPTY_STATS: ViewerStats = {
   status: 'loading',
@@ -72,10 +72,7 @@ export default function ViewerPage() {
   const pct = Math.round(live.progress * 100)
   // 数据里的 asset_url 是后端视角的绝对路径（/demo/x.splat）；子路径部署时要补上 base，
   // 否则浏览器会去站点根目录找，直接 404。
-  const rawAsset = scene?.asset_url ?? `/demo/${slug}.splat`
-  const assetUrl = rawAsset.startsWith('/')
-    ? `${import.meta.env.BASE_URL.replace(/\/$/, '')}${rawAsset}`
-    : rawAsset
+  const assetUrl = assetUrlOf(scene?.asset_url ?? `/demo/${slug}.splat`)
 
   return (
     <div className="page">
