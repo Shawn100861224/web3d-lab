@@ -27,7 +27,7 @@ echo "已生成 dist/404.html（SPA 回退）"
 # GitHub Pages 对不存在的路径一律返回 404（再用 404.html 承载 SPA）：页面能渲染，
 # 但状态码难看，某些链接预览/校验会判失败。解法：为已知路由生成**真实目录**，
 # 每个目录里放一份 index.html —— 这样 /scenes/ 、/scenes/fireplace/ 都是 200。
-for r in scenes methods about guestbook; do
+for r in scenes methods about guestbook projects; do
   mkdir -p "dist/$r"
   cp dist/index.html "dist/$r/index.html"
 done

@@ -16,7 +16,7 @@ import shutil
 import sys
 from pathlib import Path
 
-TOP_ROUTES = ("scenes", "methods", "about", "guestbook")
+TOP_ROUTES = ("scenes", "methods", "about", "guestbook", "projects")
 
 
 def main() -> int:
@@ -46,7 +46,25 @@ def main() -> int:
         shutil.copyfile(index, d / "index.html")
         made += 1
 
-    print(f"已生成 {made} 个深链目录（{len(TOP_ROUTES)} 个顶层路由 + {len(slugs)} 个场景），这些路径将返回 200")
+    # 项目详情深链：/projects/<owner>/<name>/（数据来自 radar.json）
+    projects = 0
+    radar = root / "radar.json"
+    if radar.exists():
+        try:
+            items = json.loads(radar.read_text(encoding="utf-8"))["items"]
+        except Exception as exc:  # 兜底数据坏了不该让整次构建失败
+            print(f"⚠️ 读取 radar.json 失败：{exc}")
+            items = []
+        for it in items:
+            d = root / "projects" / it["owner"] / it["name"]
+            d.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(index, d / "index.html")
+            projects += 1
+
+    print(
+        f"已生成 {made + projects} 个深链目录"
+        f"（{len(TOP_ROUTES)} 个顶层路由 + {len(slugs)} 个场景 + {projects} 个项目），这些路径将返回 200"
+    )
     return 0
 
 
