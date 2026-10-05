@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>web3d-lab 作品说明</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 10mm 11mm 9mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: #14181f;
+        font-family: "Microsoft YaHei", "Noto Sans SC", "PingFang SC", sans-serif;
+        font-size: 9.1pt;
+        line-height: 1.34;
+      }
+      h1 {
+        margin: 0 0 2px;
+        font-size: 15pt;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: #55606f;
+        font-size: 9.5pt;
+        margin: 0 0 6px;
+      }
+      .rule {
+        height: 2px;
+        background: #1668b3;
+        margin: 6px 0 10px;
+      }
+      h2 {
+        font-size: 10pt;
+        margin: 6px 0 3px;
+        padding-left: 6px;
+        border-left: 3px solid #1668b3;
+        color: #0d2a44;
+      }
+      p {
+        margin: 0 0 4px;
+      }
+      ul {
+        margin: 0 0 4px;
+        padding-left: 16px;
+      }
+      li {
+        margin-bottom: 0.8px;
+      }
+      b {
+        color: #0d2a44;
+      }
+      code {
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 9pt;
+        background: #f0f3f7;
+        padding: 0 3px;
+        border-radius: 2px;
+      }
+      .meta {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        font-size: 9pt;
+        color: #55606f;
+        margin-bottom: 8px;
+      }
+      .meta span b {
+        color: #14181f;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2px 0 4px;
+        font-size: 8.4pt;
+      }
+      th,
+      td {
+        border: 1px solid #d6dce4;
+        padding: 2px 5px;
+        text-align: left;
+        vertical-align: top;
+      }
+      th {
+        background: #eef3f8;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .two {
+        display: flex;
+        gap: 14px;
+      }
+      .two > div {
+        flex: 1;
+      }
+      .kpi {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin: 4px 0 6px;
+      }
+      .kpi div {
+        border: 1px solid #d6dce4;
+        border-radius: 4px;
+        padding: 3px 8px;
+        min-width: 98px;
+      }
+      .kpi b {
+        display: block;
+        font-size: 12pt;
+        color: #1668b3;
+        line-height: 1.15;
+      }
+      .kpi span {
+        font-size: 8pt;
+        color: #55606f;
+      }
+      .foot {
+        margin-top: 5px;
+        padding-top: 4px;
+        border-top: 1px dashed #c8d0da;
+        font-size: 8.5pt;
+        color: #55606f;
+      }
+      .links {
+        font-size: 9.5pt;
+      }
+      .links code {
+        background: none;
+        font-size: 9pt;
+        color: #1668b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>web3d-lab · 3DGS 在线重建查看器 + 个人主页</h1>
+    <p class="sub">
+      郑州大学 双足实验室（智能机器人创新训练基地）招新第一轮考核作品 · 方向：3D（三维视觉 / 三维重建）
+    </p>
+    <div class="meta">
+      <span>作者：<b>肖宇航</b>（软件工程 2026 级）</span>
+      <span>线上：<b>shawn100861224.github.io/web3d-lab</b></span>
+      <span>源码：<b>github.com/Shawn100861224/web3d-lab</b></span>
+      <span>联系：<b>18711505157@163.com</b></span>
+    </div>
+    <div class="rule"></div>
+
+    <h2>这是什么</h2>
+    <p>
+      一个<b>前后端一体</b>的作品站。访客打开网页，能在浏览器里<b>实时旋转一个我自己训练导出的三维高斯泼溅（3DGS）场景</b>，
+      并在旁边看到该场景的<b>真实训练指标</b>（PSNR / SSIM / 高斯点数 / 训练耗时 / 显存占用）——这些数字由训练脚本回写进数据库，不是写死的。
+      考核里多数人交静态个人主页；能把「自己训出来的重建场景」放进网页实时渲染的，几乎没有，这是这个作品的全部立足点。
+    </p>
+
+    <h2>六个页面</h2>
+    <table>
+      <tr>
+        <th>首页</th>
+        <td>精选场景 + 访问统计（14 天曲线）</td>
+        <th>场景库</th>
+        <td>卡片列表，缩略图 / 点数 / 指标，数据来自接口</td>
+      </tr>
+      <tr>
+        <th>查看器</th>
+        <td>Three.js + Spark 加载 <code>.spz</code>/<code>.splat</code>，轨道漫游 + 自动巡航 + 实时指标面板</td>
+        <th>方法对比</th>
+        <td>3DGS 家族 <b>9 类方法 × 8 个维度</b>（基元/表面/规模/速度/压缩/开源/"为什么和我有关"）</td>
+      </tr>
+      <tr>
+        <th>关于我</th>
+        <td>方向理解、真实做过的事、踩过的坑、<b>116 个仓库的项目雷达</b>（真实抓取数据）、用 AI 的过程、下一步</td>
+        <th>留言板</th>
+        <td>可写（有后端时，含限流与注入防护）；静态部署下展示离线快照并标注边界</td>
+      </tr>
+    </table>
+
+    <h2>技术栈</h2>
+    <table>
+      <tr>
+        <th>前端</th>
+        <td>Vite 8 + React 19 + TypeScript</td>
+        <th>3D 渲染</th>
+        <td>Three.js + <code>@sparkjsdev/spark</code></td>
+      </tr>
+      <tr>
+        <th>后端</th>
+        <td>FastAPI + SQLModel + SQLite（Python 3.11），4 组接口</td>
+        <th>训练</th>
+        <td>WSL2 + COLMAP + gsplat（本机 RTX 5060 Laptop 8GB）</td>
+      </tr>
+      <tr>
+        <th>测试</th>
+        <td>pytest（后端 <b>36 项</b>）+ 截图像素级渲染核验脚本</td>
+        <th>部署</th>
+        <td>GitHub Pages（已上线）；EdgeOne Makers 备用</td>
+      </tr>
+    </table>
+    <p style="font-size: 9pt; color: #55606f">
+      明确不用 Electron：交付形态是「一个链接」——安装包手机打不开、对 3D 能力零增益。
+    </p>
+
+    <h2>我具体做了什么（AI 做了什么、我否掉了什么）</h2>
+    <div class="two">
+      <div>
+        <ul>
+          <li><b>先定结构再让 AI 写</b>：先想清页面要回答评审的四个问题，把每节内容写成中文要点，再让 AI 实现版式——反过来会得到漂亮但没有信息的页面。</li>
+          <li><b>不让 AI 编数据</b>：星标是脚本抓的；3DGS 的点数、PSNR、帧率是跑出来的。</li>
+          <li><b>AI 的方案被我退回两次</b>：项目雷达先用爬虫抓 GitHub → 我改成官方 API；接口限额没处理 → 改成已授权令牌 + 结果落文件。</li>
+        </ul>
+      </div>
+      <div>
+        <ul>
+          <li><b>发现筛选逻辑不严，自己补规则</b>：抓回 138 个仓库里混着人脸识别、扫地机器人等不相关项目 → 我加「相关性关键词 + 人工否决清单」，重抓到 116 个。</li>
+          <li><b>不接受"跑起来了就算完成"</b>：要求每步留下证据——注册率不足就报错、空画布不许算通过（用像素统计判定）。</li>
+          <li><b>主动放弃并记录</b>：全分辨率 30000 步实测每步 3.6 秒（约 30 小时）→ 停掉，把数字记进文档，而不是硬跑。</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>怎么验证的（都是真实运行的输出，不是"应该没问题"）</h2>
+    <div class="kpi">
+      <div><b>40/40</b><span>COLMAP 图像注册率</span></div>
+      <div><b>0.356 px</b><span>平均重投影误差</span></div>
+      <div><b>32,925</b><span>训练产出的高斯点数</span></div>
+      <div><b>135–290 s</b><span>7000 步训练耗时</span></div>
+      <div><b>35–37 FPS</b><span>浏览器端实测帧率</span></div>
+      <div><b>36 项</b><span>后端自动化测试</span></div>
+    </div>
+    <ul>
+      <li><b>训练链路端到端跑通</b>：照片 → COLMAP 稀疏重建 → gsplat 训练 → 导出上网版 <code>.splat</code>（每点 32 字节，约 1 MB）→ 网页实时渲染 → 指标回写数据库。</li>
+      <li><b>数据一致性可对账</b>：数据库里 32,925 × 32 字节 = 资产实际大小 1,053,600 字节，正好吻合。</li>
+      <li><b>像素级判空</b>：用「亮像素占比 + 亮度标准差 + 重心」区分"真渲染出来了"和"加载成功但全黑"。</li>
+      <li><b>后端是真的</b>：空库返回 200 而非 404、重复 slug 409、未知场景 404、限流 429 + Retry-After、UTF-8 往返、时区分桶、CORS 白名单——都有对应测试；XSS 载荷实测只以文本呈现、DOM 无注入节点。</li>
+      <li><b>上线实测</b>：公开链接不带凭据返回 200（首字节约 0.5 秒），全球 15 个节点拨测全部通过。</li>
+    </ul>
+
+    <h2>已知边界（不想含糊过去）</h2>
+    <ul>
+      <li><b>线上是静态演示版</b>：留言板与访问统计需要后端服务，而公网后端需要自有域名（EdgeOne 的默认域名是带鉴权的预览链接）。后端代码完整可跑，本地一条命令启动。</li>
+      <li><b>当前展示的自训场景是"合成采集"</b>（代码渲染的多视角图，用于先打通链路），正在替换为手机实拍的场景；换真实照片只需替换 <code>images/</code> 目录，管线的命令一个字不用改。</li>
+      <li><b>画质还有提升空间</b>：训练器是为零额外依赖手写的精简版（PSNR 约 16 dB），提升路径（全长步数/分辨率、或改用官方训练器）与实测耗时都已写进仓库文档。</li>
+    </ul>
+
+    <h2>下一步</h2>
+    <ul>
+      <li>手机环拍单个物体 30–50 张 → 跑通"实拍 → 重建 → 训练 → 上图"整条链，替换线上的合成场景。</li>
+      <li>按实验室安排打 C++ / Linux 基础：WSL2 环境已就绪（首个 C++ 程序与 CMake 多文件项目已跑通）。</li>
+      <li>（可选）给后端配自有域名，把访问统计与留言板真正放到公网，做成同域免 CORS 的完整形态。</li>
+    </ul>
+
+    <p class="foot">
+      仓库内含全部过程记录：<code>README.md</code>（技术栈与验收标准）、<code>PROGRESS.md</code>（模块进度与证据）、
+      <code>pipeline/README.md</code>（训练管线，含三次纹理失败与 CUDA 工具链踩坑记录）。可随时按文档复现。
+    </p>
+  </body>
+</html>
