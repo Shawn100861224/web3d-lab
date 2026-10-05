@@ -37,11 +37,24 @@
 | 8 | 训练管线 | COLMAP → 3DGS → 导出 .spz + 指标回写（**需要照片**） |
 | 9 | 部署 | docker-compose 起得来 + 公网链接（**发布前问用户**） |
 
-## 需要用户（本人）输入的三件事
+## 需要用户（本人）输入的事
 
-1. **照片**：手机环拍单个物体/桌面 30–50 张（模块 8 需要；模块 1–7 先用 spark 官方示例 `.spz` 跑通）。
-2. **是否发布到公网** + 用免费隧道还是自有服务器。
-3. 现有 `C:\Users\Shawn\lab\web-3d`（静态页）**归另一个 Hermes 实例维护**，本项目另起目录，最后把其中的 About 内容并进来。
+### 已经不用你动的（都完成了）
+
+1. ✅ **发布到公网**：前端已发到 GitHub Pages → **https://shawn100861224.github.io/web3d-lab/**（公开可访问，实测首字节 ~0.5s，全球 15 节点拨测全 200）。
+   EdgeOne Makers 也部署过一份（生产部署、状态成功），但**它的默认域名是带鉴权的预览链接**（不带 token 返回 401、3 小时过期），
+   官方文档明确：公开访问需绑定**自有域名**。所以那条线暂搁置，构建产物与部署脚本留在仓库里，等有域名随时可切。
+2. ✅ **并入 `lab/web-3d` 的内容**：那里的文案已并入 `/about`（方向理解 / 做过的事 / 踩过的坑 / 用 AI 的过程 / 下一步），
+   项目雷达的 116 条真实抓取数据也一并进来。**那个目录仍归另一个 Hermes 实例维护，本项目只读不改。**
+
+### 仍然需要你本人（3 件，都不急）
+
+1. **照片（模块 8 的真实交付）**：手机环拍单个物体或桌面 **30–50 张**——多角度、相邻视角重叠 60% 以上、光照均匀、别拍糊。
+   给我照片后跑 `pipeline/run_all.sh`，就能把线上那个标着「合成采集（链路验证场景）」的条目**换成你实拍的场景**（指标与资产都会自动回写）。
+2. **联系方式（可选）**：`/about` 页脚目前**没有任何联系方式**（按你「先不填」的决定）。要放就把愿意公开的微信/邮箱/手机号告我。
+3. **后端要不要真正上线（可选，.cn 域名 ¥38/年 起）**：只有买了自有域名，才能把「访问统计 + 留言板」放到公网
+   （EdgeOne Cloud Functions 原生支持 Python/FastAPI，同域免 CORS）。不买就维持现状——静态演示版：
+   场景库 / 3DGS 查看器 / 方法对比 / 关于我全部可用，留言板展示离线快照并明确标注边界。
 
 ## 本地开发命令（模块 1 起可用）
 
@@ -53,7 +66,7 @@ cd D:/lab/web3d-lab/backend && .venv/Scripts/python.exe -m uvicorn app.main:app 
 cd D:/lab/web3d-lab/frontend && npm run dev
 ```
 
-自检：浏览器开 http://127.0.0.1:5173/?scene=robot-head ，应看到左侧视口里可旋转的 3DGS 场景 + 右侧指标面板。
+自检：浏览器开 http://127.0.0.1:5173/scenes/robot-head ，应看到左侧视口里可旋转的 3DGS 场景 + 右侧指标面板。
 
 ## 前端验收钩子
 
@@ -63,8 +76,9 @@ cd D:/lab/web3d-lab/frontend && npm run dev
 
 ## 示例资产（frontend/public/demo/）
 
-4 个示例 `.spz` 共约 19 MB，来自 spark 官方示例清单（`sparkjs.dev` 的
-`examples/assets.json`），用途是「先把链路跑通」，模块 8 会用自训场景替换掉最显眼的位置。
+目录里有 **5 个可渲染资产**：4 个示例 `.spz`（约 19 MB，来自 spark 官方示例清单 `sparkjs.dev`
+的 `examples/assets.json`）+ 1 个**自训导出**的 `.splat`（1.0 MB，见最后一行）。
+示例资产用于「先把链路跑通」；真实照片到位后会用实拍场景替换掉最显眼的位置。
 重新拉取用 `frontend/scripts/fetch-demo-assets.sh`（**必须走 Clash 代理**，直连 sparkjs.dev 速度为 0）。
 
 | 文件 | 点数 | 包围盒（世界单位） | 实测 |
@@ -73,6 +87,7 @@ cd D:/lab/web3d-lab/frontend && npm run dev
 | `fireplace.spz` | 301,000 | 8.2×6.5×7.0 | 正常 |
 | `painted-bedroom.spz` | 500,000 | 10.3×7.3×11.5 | 正常 |
 | `valley.spz` | 500,000 | 915.9×341.6×414.8 | 正常，需按宽高比取景 |
+| `toy-capture.splat` **（自训）** | 32,925 | 1.75 | 合成采集 40 视角 → COLMAP 40/40 注册 → gsplat 训练 7000 步导出；线上实测 35–37 FPS，加载约 0.9s |
 
 **踩过的坑（模块 8 导出 .spz 时必看）**：`snow-street.spz`（官方示例之一，981,908 点）
 在 spark 2.3.1 下 `numSplats` 能解析成 981,908，但 `getBoundingBox()` 返回**空盒**
@@ -92,15 +107,24 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 
 ## 新会话怎么接手（重要）
 
-- **先读 `HANDOFF.md`**（交接表：这条线发生过什么 / 留下什么 / 别再重复什么 / 下一步），再读 `PROGRESS.md` 的自动区。
+- **真相源是本文件 + `PROGRESS.md` 的自动区**（后者由 `devloop.py` 渲染，禁止手写）。
+  `HANDOFF.md` 是**另一条线**写的交接表（可能滞后），当参考读、不要当唯一依据。
 - **续跑**：读 `PROGRESS.md` 看「进行中/待办」，跑
   `python <skills>/autonomous-ai-agents/autonomous-dev-loop/scripts/devloop.py check`
   从下一个模块接着做；不要重新侦察已定的技术栈。
 - **恢复原对话**：桌面端左栏点这条会话，或 `hermes --resume <session_id>`。
 - **自主开发循环**默认开启：不停下等确认，但**拍摄照片、发布上线、花真钱、注册第三方账号**这四类必须停下来问本人。
 
-## 环境快照（截至 2026-10-04）
+## 环境快照（截至 2026-10-05）
 
-- 已装技能（下一会话生效）：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`。
-- Hermes(profile 10086) 主模型临时 = native `deepseek`/`deepseek-flash`（消耗 Harness 活动赠金，赠金优先于充值余额扣），另留别名 `ofox` 回切；**赠金 2026-10-06 21:00 过期**。
-- 本机：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB / WSL2 Ubuntu-24.04 已装（训练用）。
+- **部署**：前端已上线 GitHub Pages → `https://shawn100861224.github.io/web3d-lab/`；EdgeOne Makers 项目 `web3d-lab`
+  已建（生产部署成功，但默认域名带鉴权、需自有域名才能公开访问）。
+- **训练环境**（WSL2 Ubuntu-24.04，详见 `pipeline/README.md`）：torch 2.14.1+cu130 / RTX 5060 Laptop（sm_120）/
+  COLMAP 3.9.1（apt 版无 CUDA）/ **自拼的 CUDA 13.4 工具链**（`cuda-nvcc-13-4` + `libnvvm-13-4`，CUDA 13 把 nvvm 改名了）/
+  gsplat 走 JIT 编译（缓存于 `~/.cache/torch_extensions`）。python 环境 `~/web3d/venv`，数据 `~/web3d/data/`。
+- 已装技能（见 `hermes skills list`）：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`。
+- Hermes(profile 10086) 主模型临时 = native `deepseek`/`deepseek-flash`（消耗 Harness 赠金，赠金优先于充值余额扣），
+  别名 `ofox` 可回切；**赠金 2026-10-06 21:00 过期**。
+- 本机：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB。
+- 网络要点（都踩过）：直连 `sparkjs.dev` 速度 0 → 必须走 Clash 代理；GitHub 直连慢（推 20MB 约 2 分钟）；
+  npmmirror / 清华 PyPI 源反过来**要关代理**；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。
