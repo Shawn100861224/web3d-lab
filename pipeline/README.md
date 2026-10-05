@@ -22,7 +22,7 @@ tests/test_colmap_parser.py    解析器自测（不依赖真实数据）
 | COLMAP | **3.9.1（apt 装，无 CUDA）** → SIFT 必须加 `--SiftExtraction.use_gpu 0`，否则直接报错 |
 | PyTorch | **2.14.1+cu130**，`torch.cuda.is_available()=True`，算力 **(12, 0) = sm_120 Blackwell** |
 | CUDA 编译器 | **自己拼的 CUDA 13.4**（见下节），`CUDA_HOME=~/web3d/cuda-debs-extracted/usr/local/cuda-13.4` |
-| Python 环境 | `~/web3d/venv`；数据放 `~/web3d/data/`（**不要放 /mnt/d**，9p 跨文件系统慢一个量级） |
+| Python 环境 | `~/web3d/venv`；数据放 `~/web3d/data/`（9p 跨文件系统比内盘慢一个量级）—— **但见下方「WSL 空闲即关」**：写进 WSL 内盘的未落盘数据会在硬重启中丢失，**要求结果可存活时请把数据集放 `/mnt/d/...`** |
 
 ## 环境搭建踩的四个坑（都别再踩）
 
