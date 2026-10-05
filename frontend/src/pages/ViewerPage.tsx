@@ -59,6 +59,8 @@ export default function ViewerPage() {
   const [live, setLive] = useState<ViewerStats>(EMPTY_STATS)
   const [autoRotate, setAutoRotate] = useState(true)
   const [views, setViews] = useState<number | null>(null)
+  // 帧率历史（近 40 次采样 ≈ 20 秒），给指标面板画实时曲线
+  const [fpsHistory, setFpsHistory] = useState<number[]>([])
 
   useEffect(() => {
     let alive = true
@@ -92,6 +94,12 @@ export default function ViewerPage() {
 
   // 点云真正解析完成才记一次「加载成功」——这是衡量「访客真的看到了重建场景」的指标，
   // 与单纯打开页面区分开。
+  useEffect(() => {
+    if (live.status === 'ready' && live.fps > 0) {
+      setFpsHistory((h) => [...h.slice(-39), live.fps])
+    }
+  }, [live.fps, live.status])
+
   useEffect(() => {
     if (live.status === 'ready') trackEvent('splat_load', `/scenes/${slug}`, slug)
     if (live.status === 'error') trackEvent('render_error', `/scenes/${slug}`, slug)
@@ -185,7 +193,7 @@ export default function ViewerPage() {
           />
         </div>
 
-        <MetricsPanel scene={scene} live={live} />
+        <MetricsPanel scene={scene} live={live} fpsHistory={fpsHistory} />
       </div>
     </div>
   )

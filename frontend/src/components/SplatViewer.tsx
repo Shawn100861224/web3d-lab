@@ -99,7 +99,7 @@ export default function SplatViewer({
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearColor(0x0d0f13, 0)
+    renderer.setClearColor(0x101520, 0)  // 主题 C 底色
     host.appendChild(renderer.domElement)
     renderer.domElement.style.display = 'block'
     renderer.domElement.style.width = '100%'

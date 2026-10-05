@@ -32,11 +32,24 @@ export default function App() {
             首页
           </NavLink>
           <NavLink to="/scenes">场景库</NavLink>
+          <NavLink to="/projects">开源项目</NavLink>
           <NavLink to="/methods">方法对比</NavLink>
           <NavLink to="/about">关于我</NavLink>
           <NavLink to="/guestbook">留言板</NavLink>
         </nav>
       </header>
+
+      <div className="techstrip" aria-hidden="true">
+        <span>WebGL2</span>
+        <span>3DGS · Spark 2.3.1</span>
+        <span>FastAPI + SQLModel</span>
+        <span>
+          后端测试 <b>36</b> 项通过
+        </span>
+        <span>
+          场景 <b>5</b> 个
+        </span>
+      </div>
 
       <main className="content">
         <Outlet />

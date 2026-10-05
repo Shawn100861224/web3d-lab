@@ -1,13 +1,21 @@
 :root {
-  --bg: #0b0d11;
-  --panel: #12151c;
-  --panel-2: #161a23;
-  --line: #232936;
-  --fg: #e9edf4;
-  --muted: #8a93a5;
-  --accent: #62d0ff;
-  --ok: #3ddc97;
-  --bad: #ff6b6b;
+  /* 主题 C（暗底 + 玻璃亮面 + 光斑）—— 2026-10-05 用户选定 */
+  --bg: #101520;
+  --panel: rgba(255, 255, 255, 0.06);
+  --panel-2: rgba(255, 255, 255, 0.09);
+  --line: rgba(255, 255, 255, 0.14);
+  --line-strong: rgba(255, 255, 255, 0.22);
+  --fg: #f0f4fa;
+  --muted: #b4bed1;
+  --accent: #a8c8ff;
+  --accent-2: #6ee7bb;
+  --ok: #6ee7bb;
+  --bad: #ff7a8a;
+  --mono: ui-monospace, SFMono-Regular, Consolas, "JetBrains Mono", monospace;
+  --glass-blur: 14px;
+  --glow-1: rgba(138, 180, 255, 0.20);
+  --glow-2: rgba(110, 231, 187, 0.14);
+  --grid: rgba(255, 255, 255, 0.075);
   color-scheme: dark;
   font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Noto Sans SC",
     "Microsoft YaHei", sans-serif;
@@ -35,7 +43,7 @@ code,
 .mono {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 0.86em;
-  background: #1b2130;
+  background: rgba(255, 255, 255, 0.09);
   padding: 0.1em 0.4em;
   border-radius: 4px;
 }
@@ -1153,4 +1161,500 @@ table.cmp tbody tr:hover {
 
 .foot a:hover {
   text-decoration: underline;
+}
+
+
+/* ============================================================
+   主题 C · 科技风增强（暗底 + 玻璃亮面 + 柔和光斑 + HUD 细节）
+   说明：这一节整体覆盖上面的基础样式，改回去只需删掉本节。
+   ============================================================ */
+
+/* ---- 1. 背景：柔和光斑 + 细网格（科技感的第一层） ---- */
+body {
+  background:
+    radial-gradient(1000px 620px at 10% -12%, var(--glow-1), transparent 62%),
+    radial-gradient(760px 520px at 92% 4%, var(--glow-2), transparent 60%),
+    radial-gradient(680px 520px at 50% 108%, rgba(168, 200, 255, 0.08), transparent 65%),
+    linear-gradient(180deg, #121826 0%, var(--bg) 45%, #0b0f16 100%);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(130% 95% at 50% 0%, #000 25%, transparent 82%);
+  mask-image: radial-gradient(130% 95% at 50% 0%, #000 25%, transparent 82%);
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- 2. 玻璃拟态：所有面板统一成"半透明亮面 + 内高光" ---- */
+.panel-block,
+.card,
+.card-scene,
+.feature,
+.def,
+.stats-card,
+.gb-form,
+.gb-list li,
+.radar-list li,
+.rows .row {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.045));
+  border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 12px 32px rgba(0, 0, 0, 0.38);
+}
+
+.card-scene:hover,
+.feature:hover {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(168, 200, 255, 0.25),
+    0 16px 40px rgba(0, 0, 0, 0.45),
+    0 0 26px rgba(168, 200, 255, 0.16);
+}
+
+/* ---- 3. 顶栏：玻璃 + 底部发光线 ---- */
+.nav {
+  background: linear-gradient(180deg, rgba(24, 31, 45, 0.86), rgba(16, 21, 32, 0.72));
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.nav nav a {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.nav nav a.active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  border-color: var(--line-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: var(--fg);
+}
+
+.brand-mark {
+  color: var(--accent);
+  text-shadow: 0 0 14px rgba(168, 200, 255, 0.55);
+}
+
+/* ---- 4. 科技感排版：标签走等宽 + 数字对齐 ---- */
+.kicker,
+.section-title,
+.panel-block h2,
+.radar-stats span,
+.stats-numbers .label,
+.page-head p code,
+.count {
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+}
+
+dd,
+.num,
+.m-kv span,
+.stats-numbers .num,
+.radar-meta,
+td,
+th,
+.gb-meta,
+.kv {
+  font-variant-numeric: tabular-nums;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--line-strong), transparent);
+}
+
+/* ---- 5. 视口 HUD：四角准星 + 网格 + 扫描线 ---- */
+.viewport {
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1b2334 0%, #101520 62%, #0c1017 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.viewport::before {
+  content: '';
+  position: absolute;
+  inset: 13px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.85;
+  background:
+    linear-gradient(var(--accent), var(--accent)) left top / 26px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left top / 2px 26px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right top / 26px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right top / 2px 26px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 26px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) left bottom / 2px 26px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 26px 2px no-repeat,
+    linear-gradient(var(--accent), var(--accent)) right bottom / 2px 26px no-repeat;
+}
+
+.viewport::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    repeating-linear-gradient(180deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+  background-size: 46px 46px, 46px 46px, 100% 3px;
+}
+
+.hud {
+  z-index: 3;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  border-color: var(--line-strong);
+  background: rgba(16, 21, 32, 0.66);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* ---- 6. 状态点（呼吸灯）与徽标 ---- */
+.badge {
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(168, 200, 255, 0.18), rgba(168, 200, 255, 0.08));
+  border-color: rgba(168, 200, 255, 0.42);
+  color: var(--accent);
+}
+
+.badge::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.82); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge::before { animation: none; }
+}
+
+/* ---- 7. 数字/指标：发光 + 细刻度线 ---- */
+.stats-numbers .num,
+.panel-block dd {
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(168, 200, 255, 0.28);
+}
+
+.panel-block dl {
+  gap: 6px;
+}
+
+.panel-block .row {
+  padding-bottom: 5px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+}
+
+.panel-block .row:last-child {
+  border-bottom: none;
+}
+
+/* ---- 8. 按钮：玻璃 + 发光 hover ---- */
+button,
+.btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--line-strong);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+button:hover,
+.btn:hover {
+  border-color: var(--accent);
+  color: #ffffff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 20px rgba(168, 200, 255, 0.22);
+}
+
+.btn--primary {
+  background: linear-gradient(180deg, rgba(168, 200, 255, 0.28), rgba(168, 200, 255, 0.12));
+  border-color: rgba(168, 200, 255, 0.5);
+  color: #f4f8ff;
+}
+
+/* ---- 9. 表格（方法对比）与雷达：细网格 + 抬头高光 ---- */
+table.cmp thead th {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--fg);
+}
+
+table.cmp tbody tr:hover {
+  background: rgba(168, 200, 255, 0.07);
+}
+
+.thumb-badge {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: rgba(16, 21, 32, 0.72);
+  border-color: rgba(168, 200, 255, 0.32);
+}
+
+/* ---- 10. 滚动条（暗色系里也提亮一档） ---- */
+* {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 200, 255, 0.4);
+  background-clip: content-box;
+}
+
+
+/* ---- 11. 缩略图提亮 + 科技感描边 ---- */
+.thumb img,
+.feature img {
+  filter: brightness(1.12) contrast(1.06) saturate(1.05);
+}
+
+.card-scene .thumb {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+/* ---- 12. 首屏标题渐变 + 副标题更强的“技术味” ---- */
+.hero h1 {
+  background: linear-gradient(96deg, #ffffff 8%, var(--accent) 58%, var(--accent-2) 96%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-wrap: balance;
+}
+
+.hero .kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero .kicker::before {
+  content: '';
+  width: 22px;
+  height: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* ---- 13. 技术状态条（顶栏下方一条等宽小字，纯粹的“工程感”）---- */
+.techstrip {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 6px clamp(16px, 3vw, 40px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.techstrip b {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.techstrip span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.techstrip span::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 6px var(--accent-2);
+}
+
+
+/* ---- 14. 指标数字：发光（本轮反馈：原来太平淡） ---- */
+.panel-block dd,
+.panel-block .row dd,
+.stats-numbers .num {
+  color: var(--accent) !important;
+  text-shadow: 0 0 10px rgba(168, 200, 255, 0.45), 0 0 26px rgba(168, 200, 255, 0.18);
+}
+
+.panel-block {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.035));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 14px 36px rgba(0, 0, 0, 0.42);
+}
+
+/* ---- 15. 视口准星：呼吸动画（reduced-motion 下不动） ---- */
+.viewport::before {
+  animation: hudBreath 4.5s ease-in-out infinite;
+}
+
+@keyframes hudBreath {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewport::before { animation: none; opacity: 0.8; }
+}
+
+/* ---- 16. 技术状态条：圆点发光更强、文字略提亮 ---- */
+.techstrip {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+  color: #c3cddd;
+}
+
+.techstrip span::before {
+  box-shadow: 0 0 10px var(--accent-2), 0 0 18px rgba(110, 231, 187, 0.4);
+}
+
+/* ---- 17. 帧率折线图（实时性能曲线，给指标面板加一块“仪表”） ---- */
+.fps-chart {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.fps-chart .label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+
+
+/* ---- 18. 收尾：更硬朗的控件 + 准星响应悬停 ---- */
+.nav nav a {
+  border-radius: 5px;
+  border: 1px solid transparent;
+  position: relative;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.nav nav a.active::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 3px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 10px rgba(168, 200, 255, 0.55);
+  border-radius: 2px;
+}
+
+button,
+.btn,
+.badge,
+.tag,
+.thumb-badge {
+  border-radius: 5px;
+}
+
+.badge {
+  border-radius: 999px;
+}
+
+/* 准星在鼠标进入视口时更亮、稍微外扩 */
+.viewport:hover::before {
+  opacity: 1;
+  inset: 10px;
+  transition: inset .2s ease, opacity .2s ease;
+}
+
+.viewport::before {
+  transition: inset .2s ease, opacity .2s ease;
+}
+
+/* ---- 19. 卡片/面板：左上角一枚小刻度标记，统一“仪器面板”语言 ---- */
+.panel-block,
+.card-scene,
+.feature,
+.def,
+.stats-card,
+.gb-form,
+.gb-list li,
+.radar-list li {
+  position: relative;
+}
+
+.panel-block::before,
+.card-scene::before,
+.feature::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 14px;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.75;
+  box-shadow: 0 0 8px rgba(168, 200, 255, 0.5);
 }
