@@ -41,6 +41,8 @@ jobs:
         run: bash scripts/build-for-pages.sh "/${GITHUB_REPOSITORY#*/}/"
 
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true   # 首次部署时若 Pages 未启用，自动启用（否则工作流会失败）
       - uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
