@@ -70,6 +70,38 @@ python /mnt/d/lab/web3d-lab/pipeline/04_export_to_web.py --data "$DATA" --slug t
 > `$VAR` 会被外层吃掉变成空串（`mkdir -p $D` 会报 "missing operand"、`for c in ...; $c`
 > 会变成空）。要么写成脚本文件再 `bash script.sh`，要么用绝对路径。
 
+## ⚠️ 8GB 笔记本的可达上限（2026-10-05 实测，结论最重要）
+
+用公开数据集（Mip-NeRF 360 `counter`，240 张真实照片、自带 COLMAP 位姿）试房间级重建时，
+撞上一个**硬限制**：**WSL 下 GPU 单进程能分配的显存远低于标称值**。
+
+| 实测 | 数字 |
+|---|---|
+| 干净进程逐步分配（`tests/probe_vram.py`） | 100+200+400 = 700 MB 成功；单独再要 800 MB **失败** |
+| 关掉 WSL 释放宿主内存后重测 | 可分配上限 **700 MB → 2700 MB** |
+| 驱动同时声称的空闲 | 6.87 GiB（**数字不可信**，报错里还有 `17179869184 GiB` 这种溢出值） |
+| 训练进程里的实际天花板 | 约 1.5 GB（320 MB 的分配在"还有 5.1 GiB 空闲"时报 OOM） |
+
+**两个可操作的结论**：
+
+1. **显存上限与 Windows 可用内存强相关**（WDDM 下 GPU 显存用系统内存兜底）。实测：
+   Windows 只剩 1.7 GB 空闲时上限 700 MB；关掉 WSL 释放到 5.8 GB 后立刻变成 2700 MB。
+   → **训练前先看宿主内存**（`Get-CimInstance Win32_OperatingSystem` 的 FreePhysicalMemory），
+   把浏览器/游戏平台之类关掉，能直接换来 4 倍的可用显存。
+2. **`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` 在 WSL 上不能开**。它走 CUDA VMM 接口，
+   会在"还剩 5.83 GiB 空闲"时报 `memory mapping failed with OOM`，连 20 MB 都映射不了。
+   这是 PyTorch 自己报错信息里推荐的参数 —— 在本环境照做反而制造故障。
+
+**房间级 vs 单物体（决定能做什么）**：
+
+| 场景类型 | 参考实现需要的点数 | 本机能给 | 结果 |
+|---|---|---|---|
+| 单物体 / 桌面（如官方的 robot-head 4.5 万点） | 3–5 万 | 6–30 万 ✅ | 能看 |
+| 房间 / 街景（如 Mip-NeRF 360 counter） | 100–300 万 | 6.6 万（压到 down=4 也只到 6.6 万） | **糊到认不出**（PSNR 11.6） |
+
+→ **本机适合小场景**（就是 README 里「手机环拍单个物体 / 桌面」那条路）；
+房间级要么换原生 Windows CUDA 环境（绕开 WSL 的分配限制），要么换显卡。
+
 ## 性能观测（重要，别凭直觉估）
 
 | 配置 | 每步耗时 | 7000 步总耗时 | 显存峰值 | 备注 |
