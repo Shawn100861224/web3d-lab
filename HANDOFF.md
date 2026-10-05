@@ -2,7 +2,7 @@
 
 > 新会话开场**只读这一个文件 + `PROGRESS.md` 的自动区**，就够开工。
 > 不要 dump `state.db` 考古、不要 resume 老会话——代价写在第五节坑表里。
-> **最后更新：2026-10-05 15:35（桌面端 profile 10086 那条线）**
+> **最后更新：2026-10-05 20:45（桌面端 profile 10086 那条线）**
 
 ## 一、这条线已经发生过什么（会话表）
 
@@ -11,6 +11,7 @@
 | 10-02 10:11 | `@session:10086/20261002_101154_7f2d80`<br>「开发3DCV项目发现与安装网站」 | 做静态个人页（3D 方向 + 三维视觉开源项目雷达），装 4 个技能，部署上线 | **https://shawn100861224.github.io/bipedal-lab-3d/**<br>`C:\Users\Shawn\lab\web-3d` | $0.29 |
 | 10-04 12:04 | `@session:10086/20261004_120422_d40c7c`<br>「领取 DeepSeek 六元券」 | 领到 ¥6 赠金；桌面主模型切 native deepseek；装 5 个技能；**立项** | `D:\lab\web3d-lab` 立项 + README/PROGRESS/项目卡 | $0.51 |
 | 10-05 00:22 | `@session:10086/20261005_002207_3ee8fa`<br>「继续上次会话」 | **模块 1–9 全部推进**：前后端一体站点 + 训练管线 + 部署上线；含 8GB 机器的显存上限实测 | 见「二、现在到哪了」 | $1.26 |
+| 10-05 17:44 | `@session:10086/20261005_174447_80b63c`<br>「继续上次会话 #2」 | 内存升级评估 + **修好 10086 网关（此前该 profile 的 cron 全部静默失败）** + 建内存盯价任务（投递到微信）+ 查看器按场景配初始机位（机器人头正面）+ **README 约定：交接/待办类内容不进 README** | `price-watches/dram-16gb-ddr5-5600-sodimm.json`、提交 `a5139e7` | 待统计 |
 
 ## 二、现在到哪了
 
@@ -55,6 +56,9 @@
 | GitHub Pages 建站 | 工作流里的 `GITHUB_TOKEN` **无权创建 Pages 站点**（`Resource not accessible by integration`）→ 先用 `gh api -X POST repos/<o>/<r>/pages -f build_type=workflow` 建好 |
 | 静态托管的深链 | GitHub Pages 对未知路径返回 404（用 404.html 承载 SPA）→ 构建脚本会为每个已知路由生成**真实目录**，深链即可返回 200（`frontend/scripts/make_deep_link_dirs.py`） |
 | EdgeOne 的免费域名 | ⚠️ 它的 `*.edgeone.cool` **是带鉴权的预览链接**（不带 token 返回 401、3 小时过期）；公开访问需绑**自有域名**（官方文档明确） |
+| **某 profile 的 cron 一直不触发** | 根因：该 profile 的**网关起不来**。实测 10086 因与 default profile **共用同一套微信/QQ 凭据**、token 被占用而启动即退出（code 78）。修法：让不负责该平台的那一侧主动放弃 —— `hermes -p 10086 config set platforms.weixin.enabled false`（顶层 `platforms.<name>.enabled:false` **优先于 .env 凭据**，是官方开关），qqbot 同理。验证：`hermes cron status` 显示 "Gateway is running — cron jobs will fire" |
+| **桌面会话建的 cron 投递到哪** | `origin=null`（桌面/API 会话没有网关来源）→ `deliver=origin` 按设计**回退到 home channel**（本项目即微信）；若该平台已禁用则**投递失败但任务照跑**。桌面端**没有** `desktop/gui` 平台，也没有标题为 `Bot Chat` 的活跃会话时 `bot-chat` 不可用 → 要么用 `deliver=local`（桌面 Cron 面板可见，无推送），要么把任务放到持有微信凭据的 default profile |
+| **`hermes cron run <id>` 会被自身超时杀掉** | 它会阻塞到 tick；用 120s 超时跑就会把 owner 杀掉 → 执行记录变成 `unknown`（"whether side effects ran is unknown"）。要么给足超时，要么用 `background=true` 跑 |
 
 ## 五、技能清单（已装，无需再去找）
 
@@ -71,6 +75,25 @@
 | 本地 vs 线上功能差异 | 本地连真后端（留言板可写、统计实时）；线上是静态演示版（留言板显示离线快照并标注边界） |
 | 线上打不开时 | 先试无痕窗口；再把 Clash Verge 从"全局模式"改回"规则模式"（global 会让浏览器把 github.io 也走代理） |
 | 写 .bat 的坑 | 批处理里**中途 `chcp 65001` 会让 cmd 解析器读乱后续行、脚本静默不执行** → 把 .bat 存成 **GBK(cp936)+CRLF** 即可（中文 Windows 控制台默认码页就是它）。另外中文文件名经自动化调用会编码错乱，脚本因此用 ASCII 名 |
+
+## 六之二、内存升级与盯价（2026-10-05 新增）
+
+**实测（开机状态）**：总 **15.47 GB** / 空闲 **1.77 GB** / **占用 88.6%**；`C:\pagefile.sys` 峰值 1014 MB（上限 1024，接近打满）。
+内存条：**1 条** Micron 16GB DDR5-5600（`CT16G56C46S5.C8D`）@ `Controller0-ChannelB-DIMM0` → **单通道**；插槽 2 个、空 1 个、最大 64 GB。
+
+**结论**：值得加**同型号第二条 16GB**（→ 32GB 双通道）。价值主要来自**双通道带宽 + 余量**，不是容量本身；
+但**不能解锁房间级 3DGS**（8GB 显存仍是硬上限）。**别用 32GB 单条替代**——那样仍是单通道，等于丢掉本次升级最值钱的部分。
+
+**价格（历史高位）**：2026-09-21 ¥1,569 → **2026-10-04 ¥1,709**（京东）；历史常态 ¥250–400。
+出手线：**≤¥1,000 直接买；¥1,000–1,300 可考虑；≥¥1,500 不买**。
+二手会比新条先到价（2026-04 崩盘时闲鱼成交均价曾到 **¥968**），但假条/换颗粒风险高，只建议当面验机。
+未来走势：机构共识 **2028 年前不具备显著回落基础**（HBM 占三大厂产能 2027 年底约 35%），最可能跌破 ¥1,000 的窗口是 **2027 下半年–2028**。
+
+**免费缓解（今天就能做）**：关动态壁纸（`wallpaper64`，910 MB）+ 不用时关 Codex 桌面版（936 MB）≈ **回收 1.8 GB**，等于把当前空闲内存翻倍。
+
+**盯价任务**：建在 **default profile**（job `7ba1f71ce703`，每周一 09:00，`deliver=weixin:<home>` → 手机微信收）
+——放 default 是因为**只有它持有微信凭据**（见坑表「token 冲突」）。
+契约文件在 `profiles/10086/price-watches/dram-16gb-ddr5-5600-sodimm.json`（两 profile 共享文件系统）。
 
 ## 七、下一步（按价值排序）
 
