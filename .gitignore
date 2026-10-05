@@ -7,6 +7,7 @@ __pycache__/
 
 # 本地数据（SQLite、上传的场景、训练产物）
 backend/data/
+backend/tests/_data/
 
 # 前端
 node_modules/
