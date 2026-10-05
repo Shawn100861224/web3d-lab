@@ -18,6 +18,34 @@ export const EMPTY_STATS: ViewerStats = {
 }
 
 /**
+ * 每个场景的「正面朝向」。自动取景只能按包围盒算距离，算不出哪一面是正面 ——
+ * 朝向由导出时的坐标系决定，只能逐场景声明，否则会正好给访客看到后脑勺。
+ *
+ * az = 方位角（度，绕 Y 轴）：0 = 从 +Z 看，180 = 从 -Z 看，90 = 从 +X 看。
+ * el = 仰角（度）：正数 = 相机抬高俯视。
+ *
+ * 排查某个新场景的正面：临时加 URL 参数覆盖，例如
+ *   /scenes/<slug>?az=90&el=10
+ * 定下来之后把值写进这张表。
+ */
+const SCENE_VIEW: Record<string, { az: number; el?: number }> = {
+  'robot-head': { az: 180, el: 10 },
+}
+
+/** 允许用 URL 参数临时覆盖机位，便于逐场景定正面（不影响默认行为）。 */
+function viewOverride(): { az?: number; el?: number } {
+  if (typeof window === 'undefined') return {}
+  const q = new URLSearchParams(window.location.search)
+  const num = (key: string) => {
+    const raw = q.get(key)
+    if (raw === null || raw.trim() === '') return undefined
+    const value = Number(raw)
+    return Number.isFinite(value) ? value : undefined
+  }
+  return { az: num('az'), el: num('el') }
+}
+
+/**
  * /scenes/:slug —— 3DGS 查看器页。
  *
  * 自动化验收钩子：状态镜像到 DOM 的 `#viewer-state`（data-status / data-splats /
@@ -74,6 +102,11 @@ export default function ViewerPage() {
   // 否则浏览器会去站点根目录找，直接 404。
   const assetUrl = assetUrlOf(scene?.asset_url ?? `/demo/${slug}.splat`)
 
+  const preset = SCENE_VIEW[slug] ?? {}
+  const override = viewOverride()
+  const azimuthDeg = override.az ?? preset.az ?? 0
+  const elevationDeg = override.el ?? preset.el ?? 12
+
   return (
     <div className="page">
       <header className="topbar">
@@ -99,7 +132,13 @@ export default function ViewerPage() {
 
       <div className="stage">
         <div className="viewport">
-          <SplatViewer url={assetUrl} autoRotate={autoRotate} onStats={setLive} />
+          <SplatViewer
+            url={assetUrl}
+            autoRotate={autoRotate}
+            initialAzimuthDeg={azimuthDeg}
+            initialElevationDeg={elevationDeg}
+            onStats={setLive}
+          />
 
           {live.status === 'loading' && (
             <div className="overlay">
@@ -140,6 +179,8 @@ export default function ViewerPage() {
             data-camera={live.camera.map((v) => v.toFixed(3)).join(',')}
             data-extent={live.extent.toFixed(4)}
             data-bbox={live.bbox.map((v) => v.toFixed(3)).join(',')}
+            data-azimuth={azimuthDeg}
+            data-elevation={elevationDeg}
             data-error={live.error ?? ''}
           />
         </div>

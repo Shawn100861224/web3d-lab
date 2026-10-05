@@ -27,6 +27,18 @@ type Props = {
   autoRotate?: boolean
   /** 自动巡航的角速度（弧度/秒），0 表示关闭 */
   rotateSpeed?: number
+  /**
+   * 初始机位的方位角（度，绕 Y 轴）。0 = 从 +Z 看；180 = 从 -Z 看。
+   *
+   * 为什么需要：自动取景只能按包围盒算「离多远」，算不出「哪一面是正面」。
+   * 拿机器人头举例，纯 +Z 机位正好落在正后方（后脑勺），观感很差；
+   * 每个资产的正面朝向由导出时的坐标系决定，只能逐场景声明。
+   */
+  initialAzimuthDeg?: number
+  /**
+   * 初始机位的仰角（度）。正数=相机抬高俯视。默认 12，略微俯视比完全平视更有立体感。
+   */
+  initialElevationDeg?: number
   onStats?: (stats: ViewerStats) => void
   className?: string
 }
@@ -45,6 +57,8 @@ export default function SplatViewer({
   url,
   autoRotate = false,
   rotateSpeed = 0.6,
+  initialAzimuthDeg = 0,
+  initialElevationDeg = 12,
   onStats,
   className,
 }: Props) {
@@ -155,8 +169,17 @@ export default function SplatViewer({
         const distH = Math.max(size.x / 2, minHalf) / tanH
         const distance = Math.max(distV, distH, minHalf) * 1.2
 
+        // 方位角/仰角决定「从哪一面看」：包围盒能算距离，算不出正面朝向。
+        const az = (initialAzimuthDeg * Math.PI) / 180
+        const el = (initialElevationDeg * Math.PI) / 180
+        const dir = new THREE.Vector3(
+          Math.sin(az) * Math.cos(el),
+          Math.sin(el),
+          Math.cos(az) * Math.cos(el),
+        )
+
         controls.target.copy(center)
-        camera.position.copy(center).add(new THREE.Vector3(0, 0, distance))
+        camera.position.copy(center).add(dir.multiplyScalar(distance))
         camera.near = Math.max(distance / 1000, 0.001)
         camera.far = distance + radius * 4
         camera.updateProjectionMatrix()
@@ -225,7 +248,7 @@ export default function SplatViewer({
       renderer.domElement.remove()
       ;(window as unknown as { __web3dViewer?: ViewerStats }).__web3dViewer = undefined
     }
-  }, [url, autoRotate, rotateSpeed])
+  }, [url, autoRotate, rotateSpeed, initialAzimuthDeg, initialElevationDeg])
 
   return <div ref={hostRef} className={className} style={{ width: '100%', height: '100%' }} />
 }
