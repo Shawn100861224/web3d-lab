@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import RadarTable from '../components/RadarTable'
+import ProjectsPreview from '../components/ProjectsPreview'
 import { trackEvent } from '../lib/api'
 
 /**
@@ -184,8 +184,9 @@ export default function AboutPage() {
       <p className="note">
         脚本从 GitHub 官方接口按 topic 与关键词抓取三维视觉相关仓库，按星标与「星速」（星标 ÷ 月龄）排序；
         带「我读过」标记的是我逐个看过、写了中文笔记并给出安装命令的。数据是抓的，不是编的。
+        （下面是 6 个示例，全部项目在「开源项目」页可搜索、按分类筛选。）
       </p>
-      <RadarTable />
+      <ProjectsPreview />
 
       <h2 className="section-title">05 / 过程：我是怎么用 AI 把想法做成能跑的东西的</h2>
       <ul className="clean">

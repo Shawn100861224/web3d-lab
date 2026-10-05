@@ -49,3 +49,12 @@ export function isPicked(item: RadarItem): boolean {
 export function formatStars(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
 }
+
+/**
+ * 许可显示名：GitHub 对「有 LICENSE 文件但不符合标准模板」的仓库返回
+ * NOASSERTION，直接摆出来像报错，统一改成人话。
+ */
+export function licenseLabel(license: string | null | undefined): string {
+  if (!license || license === 'NOASSERTION') return '见仓库'
+  return license
+}

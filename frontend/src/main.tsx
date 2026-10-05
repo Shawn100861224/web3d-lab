@@ -9,6 +9,8 @@ import MethodsPage from './pages/MethodsPage.tsx'
 import NotFoundPage from './pages/NotFoundPage.tsx'
 import HomePage from './pages/HomePage.tsx'
 import LibraryPage from './pages/LibraryPage.tsx'
+import ProjectDetailPage from './pages/ProjectDetailPage.tsx'
+import ProjectsPage from './pages/ProjectsPage.tsx'
 import ViewerPage from './pages/ViewerPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
@@ -21,6 +23,8 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<HomePage />} />
           <Route path="scenes" element={<LibraryPage />} />
           <Route path="scenes/:slug" element={<ViewerPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:owner/:name" element={<ProjectDetailPage />} />
           <Route path="guestbook" element={<GuestbookPage />} />
           <Route path="methods" element={<MethodsPage />} />
           <Route path="about" element={<AboutPage />} />
