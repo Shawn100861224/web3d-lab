@@ -1,0 +1,21 @@
+{
+  "slug": "bottle",
+  "title": "运动水壶（本人实拍 · 受限对照）",
+  "summary": "手机环绕实拍 43 张（31 张 1024×1366 + 12 张 1279×1706 两种分辨率混用，拍摄中途光照有变化）→ COLMAP 只注册 15/43；把尺寸统一后重跑仍是 15/43 → 用这 15 个视角训练 12000 步导出。PSNR 10.4，画质很糊：作为「手机实拍 · 受限对照」保留，用来说明重建质量的上限由照片决定。",
+  "technique": "3DGS",
+  "source": "self-capture",
+  "num_points": 48995,
+  "sh_degree": 3,
+  "iterations": 12000,
+  "train_seconds": 347,
+  "gpu_mem_mb": 1122,
+  "capture_device": "手机（实拍）",
+  "capture_views": 43,
+  "psnr": 10.42,
+  "ssim": 0.6314,
+  "asset_url": "/demo/bottle.splat",
+  "asset_format": "splat",
+  "license": "自有照片（本人拍摄）",
+  "featured": false,
+  "published": true
+}
