@@ -150,6 +150,9 @@ def main() -> int:
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--holdout", type=int, default=4, help="留出多少个视角只做评估")
     ap.add_argument("--down", type=int, default=2, help="图像降采样倍数（8GB 显存建议 2）")
+    ap.add_argument("--densify-grad", type=float, default=2e-4,
+                    help="稠密化梯度阈值：越小长出的高斯越多、细节越锐（默认 2e-4 对齐 Inria 3DGS）。"
+                         "显存吃紧时别调小——高斯数×渲染像素决定显存。")
     ap.add_argument("--max-splats", type=int, default=300_000,
                     help="稠密化后的高斯数上限（8GB 显存建议 30–80 万）")
     ap.add_argument("--max-init-points", type=int, default=0,
@@ -325,7 +328,7 @@ def main() -> int:
                 grads = grad_acc / 100.0                      # 区间内平均梯度模长
                 grad_acc.zero_()
                 max_scale = torch.exp(scales).max(dim=-1).values
-                densify_mask = grads >= 2e-4
+                densify_mask = grads >= args.densify_grad
                 split_mask = densify_mask & (max_scale > 0.015)
                 clone_mask = densify_mask & ~split_mask
 

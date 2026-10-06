@@ -156,6 +156,32 @@
       "published": true,
       "created_at": "2026-10-05 16:23:18.490362+00:00",
       "updated_at": "2026-10-06 03:44:59.326727+00:00"
+    },
+    {
+      "id": 9,
+      "slug": "shoe",
+      "title": "运动鞋（本人实拍）",
+      "summary": "43 张手机环绕实拍（12MP 原图，数据线传输）→ 降采样到 2016px + 亮度归一 → COLMAP 注册 39/43（90.7%，903 对图像全部匹配上）→ gsplat 训练 15000 步（504×378，8GB 卡显存峰值 809MB）。留出视角 PSNR 11.68 / SSIM 0.6107。",
+      "technique": "3DGS",
+      "source": "self-capture",
+      "num_points": 28255,
+      "sh_degree": 3,
+      "iterations": 15000,
+      "train_seconds": 594,
+      "gpu_mem_mb": 809,
+      "capture_device": "手机（实拍）",
+      "capture_views": 43,
+      "psnr": 11.682,
+      "ssim": 0.6107,
+      "lpips": null,
+      "asset_url": "/demo/shoe.splat",
+      "asset_format": "splat",
+      "thumbnail_url": null,
+      "license": "自有照片（本人拍摄）",
+      "featured": false,
+      "published": true,
+      "created_at": "2026-10-06 05:27:48.876059+00:00",
+      "updated_at": "2026-10-06 05:27:48.876059+00:00"
     }
   ],
   "note": "静态兜底数据：后端不可达时前端读取它；由 backend/scripts/export_static.py 生成"
