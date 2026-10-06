@@ -13,7 +13,7 @@
 | 10-05 00:22 | `@session:10086/20261005_002207_3ee8fa`<br>「继续上次会话」 | **模块 1–9 全部推进**：前后端一体站点 + 训练管线 + 部署上线；含 8GB 机器的显存上限实测 | 见「二、现在到哪了」 | $1.26 |
 | 10-05 17:44 | `@session:10086/20261005_174447_80b63c`<br>「继续上次会话 #2」 | 内存升级评估 + **修好 10086 网关（此前该 profile 的 cron 全部静默失败）** + 建内存盯价任务（投递到微信）+ 查看器按场景配初始机位（机器人头正面）+ **README 约定：交接/待办类内容不进 README** | `price-watches/dram-16gb-ddr5-5600-sodimm.json`、提交 `a5139e7` | 待统计 |
 | 10-05 23:53 → 10-06 00:39 | `@session:10086/20261005_002207_3ee8fa`（同一长会话） | 用户本人实拍保温杯 43 张 → COLMAP → 训练 12000 步 → `bottle.splat`；场景 `bottle` 注册进后端 DB | `~/web3d/data/bottle/`、`frontend/public/demo/bottle.splat` | 待统计 |
-| 10-06 11:40 | 同上（续） | **实拍场景上线**为第 6 个场景（`bottle`，受限对照）；修正 DB 里未证实的「43/43 调优 SIFT」文案（改为只写实测事实）；实测**尺寸统一并不能救这批照片**（15/43 → 15/43）；调优 SIFT 参数在 7.9G WSL 里被 OOM 杀掉 | 提交 `ed318a8`（含 `frontend/public/demo/bottle.splat` 资产）、`backend/scripts/payload-bottle.json`、`pipeline/tmp_colmap_tuned2.sh` | 待统计 |
+| 10-06 11:40 | 同上（续） | **实拍场景上线**为第 6 个场景（`bottle`，受限对照）；修正 DB 里未证实的「43/43 调优 SIFT」文案（改为只写实测事实）；实测**尺寸统一并不能救这批照片**（15/43 → 15/43）；两次调优 SIFT 实验都被 **WSL 虚拟机整机重启**静默杀掉（判据与缓解见技能 `web3d-lab`） | 提交 `ed318a8`、`ef74fcd`（HANDOFF+坑表）、`backend/scripts/payload-bottle.json`、技能 `web3d-lab` 更新 | 待统计 |
 
 ## 二、现在到哪了
 
