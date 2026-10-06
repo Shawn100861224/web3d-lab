@@ -81,6 +81,23 @@ def build_params(pts_xyz, pts_rgb, sh_degree=3, scene_scale=1.5, max_scale_frac=
     return params
 
 
+def activated_scales(params, mode: str = "exp"):
+    """rasterization 需要的是「已激活的线性尺度」，而 params["scales"] 里存的是 **log 值**。
+
+    这是本脚本长期「糊成灰雾」的根因：DefaultStrategy（gsplat 官方）内部一律写
+    `torch.exp(params["scales"])`（见 gsplat/strategy/default.py:276 与 ops.py:144），
+    即 params["scales"] 的约定是 log 值；而 rasterization 里
+    `cov = R · diag(scale)² · R^T`（gsplat/cuda/_torch_impl.py:59-60）吃的是线性尺度。
+    直接把 log 值喂进去 → 等效半径 = |log(nn)|：
+      本数据 归一化后最近邻中位 0.0040 → log = -5.51 → 等效半径 5.51（场景半径只有 1.5）
+      → 每个高斯都比整个场景还大 → 100% 覆盖、std=0 的一片均匀雾。
+    mode="raw" 只为复现该 bug 做 A/B 证据用，正常训练**必须**是 exp。
+    """
+    if mode == "raw":
+        return params["scales"]
+    return torch.exp(params["scales"])
+
+
 def make_optimizers(params, lr_pos=1.6e-4):
     lrs = {"means": lr_pos, "scales": 5e-3, "quats": 1e-3,
            "opacities": 5e-2, "sh0": 2.5e-3, "shN": 2.5e-3 / 20}
@@ -104,6 +121,9 @@ def main() -> int:
     ap.add_argument("--grow-grad2d", type=float, default=2e-4,
                     help="稠密化触发阈值（DefaultStrategy 默认 2e-4）。实测本数据 means2d 梯度约 2e-7、"
                          "经 width/2 缩放后仍低于门槛 → 高斯永不增长，需调低。")
+    ap.add_argument("--raw-scales", action="store_true",
+                    help="【仅用于 A/B 复现历史 bug】把未 exp() 激活的 log 尺度直接喂给 rasterization。"
+                         "正常训练不要加这个开关。")
     args = ap.parse_args()
 
     data = Path(args.data).expanduser()
@@ -185,6 +205,13 @@ def main() -> int:
     strategy = DefaultStrategy(verbose=False, grow_grad2d=args.grow_grad2d)
     strategy.check_sanity(params, optimizers)
     state = strategy.initialize_state(scene_scale=args.scene_scale)
+    scale_mode = "raw" if args.raw_scales else "exp"
+    _sc = activated_scales(params, scale_mode).detach()
+    _span = float((pts_xyz.max(0) - pts_xyz.min(0)).max())
+    print(f"尺度激活：{scale_mode}"
+          + ("  ⚠️ 未激活（复现 bug 用）" if scale_mode == "raw" else "  (exp)")
+          + f" | 传给 rasterization 的 scale 中位 {float(_sc.median()):.5f}"
+            f"（等效半径 = |scale|，场景/点云尺度 {_span:.3f} → 中位高斯/点云 = {float(_sc.abs().median())/max(_span,1e-9)*100:.1f}%）")
 
     torch.manual_seed(0)
     log, t0 = [], time.time()
@@ -195,7 +222,7 @@ def main() -> int:
 
         colors = torch.cat([params["sh0"], params["shN"]], dim=1)
         renders, alphas, info = rasterization(
-            params["means"], params["quats"], params["scales"],
+            params["means"], params["quats"], activated_scales(params, scale_mode),
             torch.sigmoid(params["opacities"]).squeeze(-1), colors,
             viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H, sh_degree=args.sh_degree,
             backgrounds=bg_colors[cam:cam + 1],
@@ -245,9 +272,10 @@ def main() -> int:
             gt = views[cam].permute(2, 0, 1).unsqueeze(0).to(DEV).float() / 255.0
             colors = torch.cat([params["sh0"], params["shN"]], dim=1)
             r, _, _ = rasterization(
-                params["means"], params["quats"], params["scales"],
+                params["means"], params["quats"], activated_scales(params, scale_mode),
                 torch.sigmoid(params["opacities"]).squeeze(-1), colors,
-                viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H, sh_degree=args.sh_degree)
+                viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H, sh_degree=args.sh_degree,
+                backgrounds=bg_colors[cam:cam + 1])
             ev = r[0].permute(2, 0, 1).unsqueeze(0)
             ps.append(t03.psnr(ev, gt))
             torch.cuda.empty_cache()
@@ -261,10 +289,11 @@ def main() -> int:
         gt = views[cam].permute(2, 0, 1).unsqueeze(0).to(DEV).float() / 255.0
         colors = torch.cat([params["sh0"], params["shN"]], dim=1)
         r, a, _ = rasterization(
-            params["means"], params["quats"], params["scales"],
+            params["means"], params["quats"], activated_scales(params, scale_mode),
             torch.sigmoid(params["opacities"]).squeeze(-1), colors,
             viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H,
-            sh_degree=args.sh_degree, packed=False)
+            sh_degree=args.sh_degree, packed=False,
+            backgrounds=bg_colors[cam:cam + 1])
         im = (r[0].clamp(0, 1) * 255).byte().cpu().numpy()
         g = (gt[0].permute(1, 2, 0).clamp(0, 1) * 255).byte().cpu().numpy()
         _I.fromarray(np.concatenate([im, g], axis=1)).save(out_dir / "trained_vs_gt.png")

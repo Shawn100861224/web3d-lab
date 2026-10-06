@@ -26,7 +26,10 @@ ap.add_argument("--data", required=True)
 ap.add_argument("--down", type=int, default=4)
 ap.add_argument("--view", type=int, default=0)
 ap.add_argument("--out", default="/mnt/d/lab/web3d-lab/work/debug_render")
+ap.add_argument("--raw-scales", action="store_true",
+                help="【仅 A/B 复现历史 bug】把未 exp() 激活的 log 尺度直接喂给 rasterization")
 args = ap.parse_args()
+scale_mode = "raw" if args.raw_scales else "exp"
 
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
 data = Path(args.data); sparse = data / "sparse" / "0"
@@ -69,9 +72,11 @@ print(f"归一化后 点云跨度 {np.linalg.norm(pts_xyz_n.max(0)-pts_xyz_n.min
 
 params = v2.build_params(pts_xyz_n, pts_rgb)
 i = args.view
+print(f"尺度激活：{scale_mode}")
 with torch.no_grad():
     colors = torch.cat([params["sh0"], params["shN"]], dim=1)
-    r, a, _ = rasterization(params["means"], params["quats"], params["scales"],
+    r, a, _ = rasterization(params["means"], params["quats"],
+                            v2.activated_scales(params, scale_mode),
                             torch.sigmoid(params["opacities"]).squeeze(-1), colors,
                             viewmats[i:i+1], Ks[i:i+1], W, H, sh_degree=3, packed=False)
     img = (r[0].clamp(0, 1) * 255).byte().cpu().numpy()
