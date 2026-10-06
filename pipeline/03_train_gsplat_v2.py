@@ -275,7 +275,7 @@ def main() -> int:
                 params["means"], params["quats"], activated_scales(params, scale_mode),
                 torch.sigmoid(params["opacities"]).squeeze(-1), colors,
                 viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H, sh_degree=args.sh_degree,
-                backgrounds=bg_colors[cam:cam + 1])
+                backgrounds=bg_colors[cam:cam + 1].reshape(1, 1, 1, 3).expand(1, H, W, 3).contiguous())
             ev = r[0].permute(2, 0, 1).unsqueeze(0)
             ps.append(t03.psnr(ev, gt))
             torch.cuda.empty_cache()
