@@ -100,8 +100,12 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 
 ## 环境快照（截至 2026-10-05）
 
-- **部署**：前端已上线 GitHub Pages → `https://shawn100861224.github.io/web3d-lab/`；EdgeOne Makers 项目 `web3d-lab`
-  已建（生产部署成功，但默认域名带鉴权、需自有域名才能公开访问）。
+- **部署（2026-10-06 更新）**：公开主入口 → **`https://www.shawnlab.cn`** ✓
+  （自有域名，已配 HTTPS 证书 · 加速区域选「全球可用区（不含中国大陆）」故**免备案** ·
+  电脑与手机流量均实测可访问 ✓）
+  GitHub Pages 作为镜像：`https://shawn100861224.github.io/web3d-lab/`
+  （国内部分网络下不稳 ✗ —— 同一台电脑能开、手机流量白屏 —— 所以改为自有域名为主入口 ✓）
+  接入方式：腾讯云 EdgeOne Makers 项目 `web3d-lab`（Maker 预览域名 `*.edgeone.dev` 带鉴权返回 401 ✗，**不要对外提供**）。
 - **训练环境**（WSL2 Ubuntu-24.04，详见 `pipeline/README.md`）：torch 2.14.1+cu130 / RTX 5060 Laptop（sm_120）/
   COLMAP 3.9.1（apt 版无 CUDA）/ **自拼的 CUDA 13.4 工具链**（`cuda-nvcc-13-4` + `libnvvm-13-4`，CUDA 13 把 nvvm 改名了）/
   gsplat 走 JIT 编译（缓存于 `~/.cache/torch_extensions`）。python 环境 `~/web3d/venv`，数据 `~/web3d/data/`。
