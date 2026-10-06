@@ -19,20 +19,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 BASE = "http://127.0.0.1:8000"
 
 SAMPLES: list[dict] = [
+    # ⚠️ 署名必须保持中性「示例留言 N」。
+    # 早期版本用了「实验室学长 / 室友 / 同学」——会被误读成真实访客留言，
+    # 其中「实验室学长」更等于冒用真实身份，是诚信风险。不要改回具名。
     {
-        "name": "实验室学长",
+        "name": "示例留言 1",
         "message": "加载速度和漫游手感都不错。建议再补一个「训练指标对比」，把自训场景和官方示例放一起看。",
         "scene_slug": None,
         "client_id": "seed-guest-0001",
     },
     {
-        "name": "室友",
+        "name": "示例留言 2",
         "message": "手机上也能转，60 帧不掉——就是 8GB 显存的机器跑训练应该挺吃力吧？",
         "scene_slug": "robot-head",
         "client_id": "seed-guest-0002",
     },
     {
-        "name": "同学",
+        "name": "示例留言 3",
         "message": "场景级那个点云密度看着很舒服，希望能加个「只看点云 / 只看球谐颜色」的开关。",
         "scene_slug": "valley",
         "client_id": "seed-guest-0003",
