@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>web3d-lab 暗色提亮方案</title>
+    <style>
+      .wrap {
+        color: var(--foreground);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .hint {
+        color: var(--muted-foreground);
+        font-size: 12px;
+        margin: 0 0 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+      .col {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .cap {
+        padding: 8px 11px;
+        font-size: 12px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .cap em {
+        font-style: normal;
+        font-weight: 400;
+        font-size: 11px;
+        color: var(--muted-foreground);
+      }
+      /* 迷你界面：模拟真实站点结构 */
+      .mock {
+        padding: 0;
+        font-size: 11px;
+      }
+      .m-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 7px 10px;
+        border-bottom: 1px solid;
+      }
+      .m-brand {
+        font-weight: 600;
+      }
+      .m-badge {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 999px;
+        border: 1px solid;
+      }
+      .m-body {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+      }
+      .m-view {
+        height: 86px;
+        border-radius: 7px;
+        border: 1px solid;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+      }
+      .m-panel {
+        border-radius: 7px;
+        border: 1px solid;
+        padding: 8px 9px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .m-kv {
+        display: flex;
+        justify-content: space-between;
+        font-family: ui-monospace, monospace;
+        font-size: 10.5px;
+      }
+      .m-kv span:first-child {
+        opacity: 0.72;
+      }
+      .m-kv span:last-child {
+        font-weight: 600;
+      }
+      .m-chips {
+        display: flex;
+        gap: 4px;
+        padding: 0 10px 10px;
+      }
+      .m-chips i {
+        width: 15px;
+        height: 15px;
+        border-radius: 4px;
+        border: 1px solid rgba(128, 128, 128, 0.35);
+      }
+      .note {
+        padding: 0 11px 11px;
+        font-size: 11.5px;
+        color: var(--muted-foreground);
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        margin: 0 11px 11px;
+        padding: 6px 10px;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--foreground);
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="hint">
+        每格渲染的都是<b>同一个界面</b>（顶栏 → 3D 视口 → 指标面板），只有配色不同 —— 直接对比亮度。
+        括号里的数值是"整页平均亮度"的估算。
+      </p>
+      <div class="row">
+        <!-- 基准 -->
+        <div class="col">
+          <div class="cap">现状（基准）<em>亮度 ≈ 22</em></div>
+          <div class="mock" style="background:#0b0d11;color:#e9edf4">
+            <div class="m-top" style="background:#12151c;border-color:#232936">
+              <span class="m-brand">◈ web3d-lab</span>
+              <span class="m-badge" style="border-color:#232936;color:#8a93a5">演示版</span>
+            </div>
+            <div class="m-body">
+              <div class="m-view" style="background:#101319;border-color:#232936;color:#6d7686">
+                3DGS 视口
+              </div>
+              <div class="m-panel" style="background:#161a23;border-color:#232936">
+                <div class="m-kv"><span>PSNR</span><span style="color:#62d0ff">16.05</span></div>
+                <div class="m-kv"><span>高斯点</span><span style="color:#62d0ff">32,925</span></div>
+                <div class="m-kv"><span>帧率</span><span style="color:#62d0ff">37 FPS</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="m-chips">
+            <i style="background:#0b0d11"></i><i style="background:#12151c"></i>
+            <i style="background:#161a23"></i><i style="background:#232936"></i><i style="background:#62d0ff"></i>
+          </div>
+          <div class="note">你现在的样子：底很黑、面板几乎不分离。</div>
+        </div>
+
+        <!-- A -->
+        <div class="col">
+          <div class="cap">A · 灰阶整体上移一档<em>亮度 ≈ 40</em></div>
+          <div class="mock" style="background:#151a23;color:#eef2f8">
+            <div class="m-top" style="background:#1c222d;border-color:#303947">
+              <span class="m-brand">◈ web3d-lab</span>
+              <span class="m-badge" style="border-color:#35506b;color:#8fc9f0">演示版</span>
+            </div>
+            <div class="m-body">
+              <div class="m-view" style="background:#1a2029;border-color:#303947;color:#8b96a8">
+                3DGS 视口
+              </div>
+              <div class="m-panel" style="background:#212836;border-color:#303947">
+                <div class="m-kv"><span>PSNR</span><span style="color:#6fd7ff">16.05</span></div>
+                <div class="m-kv"><span>高斯点</span><span style="color:#6fd7ff">32,925</span></div>
+                <div class="m-kv"><span>帧率</span><span style="color:#6fd7ff">37 FPS</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="m-chips">
+            <i style="background:#151a23"></i><i style="background:#1c222d"></i>
+            <i style="background:#212836"></i><i style="background:#303947"></i><i style="background:#6fd7ff"></i>
+          </div>
+          <div class="note">最稳的一档：还是暗色，但底色/面板/边框都提亮了，层次清楚。</div>
+          <button data-hermes-send="用 A 方案（灰阶整体上移一档）改站点样式，先给我做本地预览不要发布">选 A</button>
+        </div>
+
+        <!-- B -->
+        <div class="col">
+          <div class="cap">B · 深底 + 明显提亮的卡片<em>亮度 ≈ 45</em></div>
+          <div class="mock" style="background:#0f1319;color:#f2f6fb">
+            <div class="m-top" style="background:#1a212b;border-color:#3b4658">
+              <span class="m-brand">◈ web3d-lab</span>
+              <span class="m-badge" style="border-color:#2f6b5c;color:#6ee7bb">演示版</span>
+            </div>
+            <div class="m-body">
+              <div class="m-view" style="background:#131922;border-color:#3b4658;color:#93a0b3">
+                3DGS 视口
+              </div>
+              <div class="m-panel" style="background:#232c39;border-color:#3b4658">
+                <div class="m-kv"><span>PSNR</span><span style="color:#6ee7bb">16.05</span></div>
+                <div class="m-kv"><span>高斯点</span><span style="color:#6ee7bb">32,925</span></div>
+                <div class="m-kv"><span>帧率</span><span style="color:#6ee7bb">37 FPS</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="m-chips">
+            <i style="background:#0f1319"></i><i style="background:#1a212b"></i>
+            <i style="background:#232c39"></i><i style="background:#3b4658"></i><i style="background:#6ee7bb"></i>
+          </div>
+          <div class="note">对比最强：底仍很深、卡片明显亮，强调色换成<b>青绿</b>（更像仪器面板）。</div>
+          <button data-hermes-send="用 B 方案（深底 + 提亮卡片 + 青绿强调色）改站点样式，先给我做本地预览不要发布">选 B</button>
+        </div>
+
+        <!-- C -->
+        <div class="col">
+          <div class="cap">C · 暗底 + 玻璃亮面<em>亮度 ≈ 38</em></div>
+          <div class="mock" style="background:#101520;color:#f0f4fa">
+            <div class="m-top" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.14)">
+              <span class="m-brand">◈ web3d-lab</span>
+              <span class="m-badge" style="border-color:rgba(138,180,255,0.5);color:#a8c8ff">演示版</span>
+            </div>
+            <div class="m-body">
+              <div
+                class="m-view"
+                style="background:linear-gradient(135deg,rgba(138,180,255,0.16),rgba(110,231,187,0.10));border-color:rgba(255,255,255,0.14);color:#a9b4c6"
+              >
+                3DGS 视口
+              </div>
+              <div class="m-panel" style="background:rgba(255,255,255,0.07);border-color:rgba(255,255,255,0.14)">
+                <div class="m-kv"><span>PSNR</span><span style="color:#a8c8ff">16.05</span></div>
+                <div class="m-kv"><span>高斯点</span><span style="color:#a8c8ff">32,925</span></div>
+                <div class="m-kv"><span>帧率</span><span style="color:#a8c8ff">37 FPS</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="m-chips">
+            <i style="background:#101520"></i><i style="background:rgba(255,255,255,0.07)"></i>
+            <i style="background:rgba(255,255,255,0.14)"></i><i style="background:#a8c8ff"></i><i style="background:#6ee7bb"></i>
+          </div>
+          <div class="note">最"高级"：半透明亮面 + 柔和光斑，靠材质感提亮而不是整体抬灰。</div>
+          <button data-hermes-send="用 C 方案（暗底 + 玻璃亮面 + 柔和光斑）改站点样式，先给我做本地预览不要发布">选 C</button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

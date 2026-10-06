@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>web3d-lab 风格候选</title>
+    <style>
+      .wrap {
+        color: var(--foreground);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .hint {
+        color: var(--muted-foreground);
+        font-size: 12px;
+        margin: 0 0 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--card);
+        display: flex;
+        flex-direction: column;
+      }
+      .shot {
+        position: relative;
+        aspect-ratio: 16 / 10;
+        background: #0a0c10;
+      }
+      .shot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .lum {
+        position: absolute;
+        right: 6px;
+        top: 6px;
+        font-family: ui-monospace, monospace;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.62);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+      }
+      .body {
+        padding: 9px 11px 11px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+      .title {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        font-weight: 600;
+      }
+      .title span {
+        font-weight: 400;
+        font-size: 11px;
+        color: var(--muted-foreground);
+      }
+      .kv {
+        font-size: 11.5px;
+        color: var(--muted-foreground);
+      }
+      .kv b {
+        color: var(--foreground);
+        font-weight: 600;
+      }
+      .swatches {
+        display: flex;
+        gap: 4px;
+        margin-top: 2px;
+      }
+      .swatches i {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1px solid var(--border);
+        display: block;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        margin-top: auto;
+        padding: 6px 10px;
+        border-radius: 7px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--foreground);
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .rec {
+        font-size: 11px;
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <p class="hint">
+        从 godly.design 的榜单里挑的 6 款「科技感」参考。左上角数字是<b>整页平均亮度</b>（0=全黑，255=全白）——
+        你要「更亮」，所以我把亮度也标出来了。每种都写清了「搬到我们站上会变成什么样」，点按钮告我选哪款。
+      </p>
+      <div class="grid">
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/rerun/hero-desktop.webp" alt="Rerun" />
+            <span class="lum">亮度 239 · 亮</span>
+          </div>
+          <div class="body">
+            <div class="title">Rerun <span>rerun.io · 3D/机器人数据可视化</span></div>
+            <div class="kv"><b>风格：</b>纯白底 + 3D 模型当主角 + 彩虹渐变数据流</div>
+            <div class="kv"><b>搬过来：</b>首屏直接把可旋转的 3DGS 场景当主体，白底 + 等宽数字 + 一条渐变数据流装饰</div>
+            <div class="swatches">
+              <i style="background:#ffffff"></i><i style="background:#0b0d11"></i>
+              <i style="background:#1f6feb"></i><i style="background:linear-gradient(90deg,#ff6b6b,#ffd166,#3ddc97,#4cc9f0)"></i>
+            </div>
+            <div class="rec">★ 最贴题：它自己就是「3D + 机器人」的工具站</div>
+            <button data-hermes-send="选 Rerun 那款风格（白底 + 3D 主角 + 渐变数据流），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/gitnimble/thumbnail.png" alt="Gitnimble" />
+            <span class="lum">亮度 243 · 最亮</span>
+          </div>
+          <div class="body">
+            <div class="title">Gitnimble <span>gitnimble.com · 开发者工具</span></div>
+            <div class="kv"><b>风格：</b>近纯白 + 产品界面截图 + 虚线连接线，极简</div>
+            <div class="kv"><b>搬过来：</b>白到发灰的底（#f7f9fa）+ 1px 细线卡片，把「查看器截图/场景缩略图」当主角，信息密度低</div>
+            <div class="swatches">
+              <i style="background:#f7f9fa"></i><i style="background:#ffffff"></i>
+              <i style="background:#2f6df6"></i><i style="background:#d7dde5"></i>
+            </div>
+            <button data-hermes-send="选 Gitnimble 那款风格（近纯白极简 + 截图/缩略图当主角），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/lightspark/thumbnail.webp" alt="Lightspark" />
+            <span class="lum">亮度 223 · 亮</span>
+          </div>
+          <div class="body">
+            <div class="title">Lightspark <span>lightspark.com · 基础设施</span></div>
+            <div class="kv"><b>风格：</b>浅底 + 毛玻璃卡片 + 柔和彩色光斑（蓝/青/粉）</div>
+            <div class="kv"><b>搬过来：</b>浅底 #f6f7fb + 半透明玻璃面板，指标面板做成「磨砂卡片」，光斑当装饰底纹</div>
+            <div class="swatches">
+              <i style="background:#f6f7fb"></i><i style="background:#cfe6ff"></i>
+              <i style="background:#c9f2e0"></i><i style="background:#ffd9e6"></i>
+            </div>
+            <button data-hermes-send="选 Lightspark 那款风格（浅底 + 毛玻璃卡片 + 柔和光斑），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/spade/thumbnail.webp" alt="Spade" />
+            <span class="lum">亮度 200 · 半亮</span>
+          </div>
+          <div class="body">
+            <div class="title">Spade <span>spade.com · 数据/AI 平台</span></div>
+            <div class="kv"><b>风格：</b>深色顶栏 + <b>薄荷绿亮色区块</b> + 金属 3D 物件，冷暖强对比</div>
+            <div class="kv"><b>搬过来：</b>顶栏保持深色（科技感），主体换成亮色区 + 薄荷绿强调色，区块撞色切分</div>
+            <div class="swatches">
+              <i style="background:#14161a"></i><i style="background:#b8f5c8"></i>
+              <i style="background:#ffffff"></i>
+            </div>
+            <div class="rec">★ 想要「亮起来但保留科技感的冷峻」选这个</div>
+            <button data-hermes-send="选 Spade 那款风格（深色顶栏 + 薄荷绿亮块），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/vessa/thumbnail.webp" alt="Vessa" />
+            <span class="lum">亮度 134 · 上亮下暗</span>
+          </div>
+          <div class="body">
+            <div class="title">Vessa <span>vessa.design · 设计工作室</span></div>
+            <div class="kv"><b>风格：</b>上下分栏——上半白底文字、下半深色大图 + 蓝紫网格底纹</div>
+            <div class="kv"><b>搬过来：</b>首页上半白（介绍+场景卡片），下半深色（3DGS 查看器全屏），网格底纹做科技感</div>
+            <div class="swatches">
+              <i style="background:#ffffff"></i><i style="background:#070609"></i>
+              <i style="background:#81a9c1"></i><i style="background:#5b5bd6"></i>
+            </div>
+            <button data-hermes-send="选 Vessa 那款风格（上下分栏：上白下深 + 蓝紫网格），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="shot">
+            <img src="https://cdn.godly.design/sites/arrakis/thumbnail.webp" alt="Arrakis" />
+            <span class="lum">亮度 15 · 全暗</span>
+          </div>
+          <div class="body">
+            <div class="title">Arrakis <span>arrakis.tech · 数据平台</span></div>
+            <div class="kv"><b>风格：</b>全暗底 + 环形数据可视化 + 细网格，「数据中心」气质</div>
+            <div class="kv"><b>搬过来：</b>底色不换，但把科技元素做足：指标做成环形图/折线、加细网格与发光边框</div>
+            <div class="swatches">
+              <i style="background:#0c0a08"></i><i style="background:#1a1715"></i>
+              <i style="background:#ff7a45"></i>
+            </div>
+            <div class="kv">（留给你对比：如果你说的「科技感」其实指这个，而不是亮色）</div>
+            <button data-hermes-send="选 Arrakis 那款风格（保持暗底、但把数据可视化与网格做足），先给我做一个只改样式的预览">选这款</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
