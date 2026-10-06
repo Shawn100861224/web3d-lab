@@ -36,3 +36,6 @@ frontend/.vite/
 .DS_Store
 Thumbs.db
 *.log
+
+# 工作数据（尺寸统一后的副本等中间产物，别入库）
+work/
