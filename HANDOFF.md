@@ -12,6 +12,8 @@
 | 10-04 12:04 | `@session:10086/20261004_120422_d40c7c`<br>「领取 DeepSeek 六元券」 | 领到 ¥6 赠金；桌面主模型切 native deepseek；装 5 个技能；**立项** | `D:\lab\web3d-lab` 立项 + README/PROGRESS/项目卡 | $0.51 |
 | 10-05 00:22 | `@session:10086/20261005_002207_3ee8fa`<br>「继续上次会话」 | **模块 1–9 全部推进**：前后端一体站点 + 训练管线 + 部署上线；含 8GB 机器的显存上限实测 | 见「二、现在到哪了」 | $1.26 |
 | 10-05 17:44 | `@session:10086/20261005_174447_80b63c`<br>「继续上次会话 #2」 | 内存升级评估 + **修好 10086 网关（此前该 profile 的 cron 全部静默失败）** + 建内存盯价任务（投递到微信）+ 查看器按场景配初始机位（机器人头正面）+ **README 约定：交接/待办类内容不进 README** | `price-watches/dram-16gb-ddr5-5600-sodimm.json`、提交 `a5139e7` | 待统计 |
+| 10-05 23:53 → 10-06 00:39 | `@session:10086/20261005_002207_3ee8fa`（同一长会话） | 用户本人实拍保温杯 43 张 → COLMAP → 训练 12000 步 → `bottle.splat`；场景 `bottle` 注册进后端 DB | `~/web3d/data/bottle/`、`frontend/public/demo/bottle.splat` | 待统计 |
+| 10-06 11:40 | 同上（续） | **实拍场景上线**为第 6 个场景（`bottle`，受限对照）；修正 DB 里未证实的「43/43 调优 SIFT」文案（改为只写实测事实）；实测**尺寸统一并不能救这批照片**（15/43 → 15/43）；调优 SIFT 参数在 7.9G WSL 里被 OOM 杀掉 | 提交 `ed318a8`（含 `frontend/public/demo/bottle.splat` 资产）、`backend/scripts/payload-bottle.json`、`pipeline/tmp_colmap_tuned2.sh` | 待统计 |
 
 ## 二、现在到哪了
 
@@ -21,9 +23,10 @@
 - ✅ **模块 1–7 全部完成并验收**（脚手架 / 场景元数据 API / 3DGS 查看器 / 场景库与路由 / 访问统计 / 留言板 / 个人主页与方法对比）
 - ✅ **模块 8 训练管线跑通**：合成采集 40 视角 → COLMAP 40/40 注册 → gsplat 训练 → 导出 `.splat` → 网页实时渲染 → 指标回写
   - 另外用**公开数据集**（Mip-NeRF 360 counter，240 张真实照片、自带位姿）验证过真实照片链路：流程全绿，但**房间级重建在本机做不到**（见坑表「WSL 显存天花板」）
+  - 🟡 **本人实拍链路（10-06 上线）**：43 张手机实拍保温杯 → COLMAP 只注册 **15/43**（`registration_rate=0.349`）；把尺寸统一 + 亮度归一后重跑**仍是 15/43** → 用这 15 个视角训练 12000 步：PSNR **10.42**、SSIM 0.6314、48,995 点 → 已作为「手机实拍 · 受限对照」上线（`/scenes/bottle`）。结论：**重建上限由照片决定**（1024px 低分辨率 + 部分糊片 + 深色光滑主体）
 - 🟡 **模块 9 部署**：前端已上线；后端未上线（要自有域名，EdgeOne 默认域名是带鉴权的预览链接）
 - 📄 《作品说明》一页 PDF：`docs/作品说明.pdf`（可随链接一起提交）
-- 场景库现有 **5 个已发布场景**：4 个 spark 官方示例 + 1 个自训合成场景；房间级那个公开数据集场景因画质糊已转草稿（`published=false`，数据留着）
+- 场景库现有 **6 个已发布场景**：4 个 spark 官方示例 + 1 个自训合成场景（toy-capture）+ **1 个本人实拍（bottle，受限对照）**；房间级那个公开数据集场景因画质糊已转草稿（`published=false`，数据留着）
 
 ## 三、费用与额度（2026-10-05 实测，权威数字）
 
@@ -59,6 +62,10 @@
 | **某 profile 的 cron 一直不触发** | 根因：该 profile 的**网关起不来**。实测 10086 因与 default profile **共用同一套微信/QQ 凭据**、token 被占用而启动即退出（code 78）。修法：让不负责该平台的那一侧主动放弃 —— `hermes -p 10086 config set platforms.weixin.enabled false`（顶层 `platforms.<name>.enabled:false` **优先于 .env 凭据**，是官方开关），qqbot 同理。验证：`hermes cron status` 显示 "Gateway is running — cron jobs will fire" |
 | **桌面会话建的 cron 投递到哪** | `origin=null`（桌面/API 会话没有网关来源）→ `deliver=origin` 按设计**回退到 home channel**（本项目即微信）；若该平台已禁用则**投递失败但任务照跑**。桌面端**没有** `desktop/gui` 平台，也没有标题为 `Bot Chat` 的活跃会话时 `bot-chat` 不可用 → 要么用 `deliver=local`（桌面 Cron 面板可见，无推送），要么把任务放到持有微信凭据的 default profile |
 | **`hermes cron run <id>` 会被自身超时杀掉** | 它会阻塞到 tick；用 120s 超时跑就会把 owner 杀掉 → 执行记录变成 `unknown`（"whether side effects ran is unknown"）。要么给足超时，要么用 `background=true` 跑 |
+| **场景文案里出现无佐证的数字** | DB/站点文案里曾写着「43/43 注册（100%，调优 SIFT 后）」，但仓库里**没有任何日志或参数记录**能佐证 → 已改为只写实测事实。**往 UI 文案里写数字前，先有对应日志** |
+| 后台长任务把输出管给 `tail` | ❌ 管道缓冲 → 进程被 OOM 杀掉时日志只剩「卡在某一步」，错误全丢（本次调优 SIFT 就栽在这）。直接 `>> 日志 2>&1` + 每步打印退出码 |
+| WSL 里调优 SIFT 的内存红线 | `max_num_features 32768` + `estimate_affine_shape 1` + `domain_size_pooling 1` 在 7.9G 内存的 WSL 里被 **OOM 杀掉**（database.db 建了 0 字节、无报错、进程消失）。先用便宜三件套：`peak_threshold 0.004` + `SiftMatching.guided_matching 1` + 放宽 `Mapper.*min_num_inliers` |
+| 上线实拍场景漏提交资产 | `frontend/public/demo/*.splat` 极易漏 `git add`（JSON 里有引用、仓库里没文件）→ 线上查看器 404。发布后必须 `curl` 线上资产 + **md5 对比本地** |
 
 ## 五、技能清单（已装，无需再去找）
 
