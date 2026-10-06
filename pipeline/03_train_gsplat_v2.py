@@ -14,6 +14,7 @@ COLMAP 解析、相机（viewmat/K）、场景归一化、SSIM/PSNR 直接复用
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import sys
 import time
@@ -30,7 +31,7 @@ _spec = spec_from_file_location("t03", _PIPE / "03_train_gsplat.py")
 t03 = module_from_spec(_spec)
 _spec.loader.exec_module(t03)          # 只拿到函数定义，main() 有 __main__ 守卫
 
-from gsplat import rasterization                    # noqa: E402
+from gsplat import rasterization, export_splats    # noqa: E402
 from gsplat.strategy import DefaultStrategy          # noqa: E402
 
 DEV = "cuda" if torch.cuda.is_available() else "cpu"
@@ -124,9 +125,23 @@ def main() -> int:
     ap.add_argument("--raw-scales", action="store_true",
                     help="【仅用于 A/B 复现历史 bug】把未 exp() 激活的 log 尺度直接喂给 rasterization。"
                          "正常训练不要加这个开关。")
+    ap.add_argument("--out-dir", default="/mnt/d/lab/web3d-lab/work/v2_last",
+                    help="产物目录：对照图 / ckpt PLY / 上网用 .splat / metrics.json 都写这里")
+    ap.add_argument("--min-opacity", type=float, default=0.02,
+                    help="导出上网 .splat 时按不透明度裁剪（丢太虚的高斯，缩体积）")
+    ap.add_argument("--refine-stop", type=int, default=15000,
+                    help="DefaultStrategy 的 refine_stop_iter：之后停止稠密化（控高斯数与耗时）")
+    ap.add_argument("--save-every", type=int, default=0,
+                    help="每 N 步存一次 ckpt PLY（0=不存）。长任务保险：云端被杀时还有产物")
+    ap.add_argument("--holdout-mode", choices=["tail", "ring"], default="tail",
+                    help="tail=留出最后 N 个视角（历史行为）；ring=按相机绕主体的方位角均匀铺开留出。"
+                         "实测 images.txt 的顺序与拍摄顺序无关：tail 会留出一整段连续弧（约 70° 无训练数据），"
+                         "查看器自由环绕时正好暴露这段盲区 → 出图一片糊/条纹。ring 让盲区均匀散开。")
     args = ap.parse_args()
 
     data = Path(args.data).expanduser()
+    out_dir = Path(args.out_dir).expanduser()
+    out_dir.mkdir(parents=True, exist_ok=True)
     sparse = data / "sparse" / "0"
     cameras, images, pts_xyz, pts_rgb = t03.read_colmap_txt(sparse)
     print(f"COLMAP：{len(images)} 视角 / {len(pts_xyz)} 稀疏点 | 设备 {DEV}")
@@ -199,10 +214,25 @@ def main() -> int:
 
     n_train = len(views) - args.holdout
     train_idx, test_idx = list(range(n_train)), list(range(n_train, len(views)))
+    if args.holdout_mode == "ring" and 0 < args.holdout < len(views):
+        # 相机中心落在主体周围一圈上 → 用「到相机群中心的方位角」排序，再等间隔留出，
+        # 保证留出视角在环上均匀分布（而不是 tail 那种一整段盲区）。
+        _C = (-viewmats[:, :3, :3].transpose(1, 2) @ viewmats[:, :3, 3:4]).cpu().numpy().reshape(-1, 3)
+        _Cc = _C - _C.mean(0, keepdims=True)
+        _, _, _Vt = np.linalg.svd(_Cc, full_matrices=False)
+        _ang = np.arctan2(_Cc @ _Vt[1], _Cc @ _Vt[0])
+        _order = list(np.argsort(_ang))
+        _step = len(_order) / args.holdout
+        test_idx = sorted({_order[min(int(round(i * _step)), len(_order) - 1)]
+                           for i in range(args.holdout)})
+        train_idx = [i for i in range(len(views)) if i not in set(test_idx)]
+        print(f"留出方式 ring：按绕环方位角均匀留出 {len(test_idx)} 个视角 "
+              f"（{', '.join(images[i]['name'] for i in test_idx)}），训练 {len(train_idx)} 个")
 
     params = build_params(pts_xyz, pts_rgb, scene_scale=args.scene_scale)
     optimizers = make_optimizers(params)
-    strategy = DefaultStrategy(verbose=False, grow_grad2d=args.grow_grad2d)
+    strategy = DefaultStrategy(verbose=False, grow_grad2d=args.grow_grad2d,
+                               refine_stop_iter=args.refine_stop)
     strategy.check_sanity(params, optimizers)
     state = strategy.initialize_state(scene_scale=args.scene_scale)
     scale_mode = "raw" if args.raw_scales else "exp"
@@ -260,7 +290,20 @@ def main() -> int:
             print(f"  step {step:5d} | loss {loss.item():.4f} | PSNR {p:5.2f} "
                   f"| splats {params['means'].shape[0]:6d} | {time.time()-t0:6.1f}s", flush=True)
 
+        # 长任务保险：中途存 PLY（云端被杀/超时也能捞回一个能看的结果）
+        if args.save_every and step % args.save_every == 0 and step != args.steps:
+            ck = out_dir / f"ckpt_{step}.ply"
+            with torch.no_grad():
+                export_splats(
+                    means=params["means"].detach(), scales=params["scales"].detach(),
+                    quats=params["quats"].detach(), opacities=params["opacities"].squeeze(-1).detach(),
+                    sh0=params["sh0"].detach(), shN=params["shN"].detach(),
+                    format="ply", save_to=str(ck))
+            print(f"  [checkpoint] {ck}（{ck.stat().st_size/1048576:.1f} MB）", flush=True)
+
     print(f"\n训练完成 {time.time()-t0:.1f}s")
+    train_seconds = round(time.time() - t0, 1)
+    peak_mb = round(torch.cuda.max_memory_allocated() / 1024 / 1024, 1) if DEV == "cuda" else 0.0
     print("\n=== loss 曲线（判据：应当持续下降）===")
     for r in log:
         print(f"  step {r['step']:5d}  loss {r['loss']:.4f}  psnr {r['psnr']:5.2f}  splats {r['splats']}")
@@ -268,6 +311,7 @@ def main() -> int:
     # 留出视角评估
     with torch.no_grad():
         ps = []
+        ss = []
         for cam in test_idx:
             gt = views[cam].permute(2, 0, 1).unsqueeze(0).to(DEV).float() / 255.0
             colors = torch.cat([params["sh0"], params["shN"]], dim=1)
@@ -279,13 +323,12 @@ def main() -> int:
                 backgrounds=bg_colors[cam:cam + 1])
             ev = r[0].permute(2, 0, 1).unsqueeze(0)
             ps.append(t03.psnr(ev, gt))
+            ss.append(float(t03.ssim_simple(ev, gt)))
             torch.cuda.empty_cache()
-        print(f"\n留出视角 PSNR 均值 {np.mean(ps):.2f} dB  （原脚本同类数据约 11.8）")
+        print(f"\n留出视角 PSNR 均值 {np.mean(ps):.2f} dB / SSIM 均值 {np.mean(ss):.4f}  （原脚本同类数据约 11.8）")
 
         # 存「训练后渲染 vs 原图」对照图 + 统计（std=0 即还是均匀雾）
         from PIL import Image as _I
-        out_dir = Path("/mnt/d/lab/web3d-lab/work/v2_last")
-        out_dir.mkdir(parents=True, exist_ok=True)
         cam = test_idx[0]
         gt = views[cam].permute(2, 0, 1).unsqueeze(0).to(DEV).float() / 255.0
         colors = torch.cat([params["sh0"], params["shN"]], dim=1)
@@ -301,6 +344,65 @@ def main() -> int:
         print(f"  渲染 std={im.reshape(-1,3).std(0).round(1)} | 原图 std={g.reshape(-1,3).std(0).round(1)}"
               f" | alpha>0.5 占 {(a[0, ..., 0] > 0.5).float().mean().item()*100:.1f}%")
         print(f"  对照图：{out_dir}/trained_vs_gt.png（左=训练后渲染 右=原图）")
+
+    # ---- 导出产物 ----
+    # 关键约定（gsplat 1.5.3 exporter 源码）：
+    #   splat2splat_bytes / splat2ply_bytes 内部对 scales 做 exp()、对 opacities 做 sigmoid()
+    #   → 必须传 params 里的 **log 尺度 / logit 不透明度**（原版 03 传了 sigmoid 后的值 = 二次 sigmoid，偏暗）
+    means = params["means"].detach()
+    scales_log = params["scales"].detach()
+    quats = params["quats"].detach()
+    opac_logit = params["opacities"].squeeze(-1).detach()
+    sh0 = params["sh0"].detach()
+    shN = params["shN"].detach()
+
+    opac_lin = torch.sigmoid(opac_logit)
+    keep = opac_lin >= args.min_opacity
+    n_keep = int(keep.sum())
+    if n_keep < 100:                      # 兜底：别把场景裁空
+        keep = torch.ones_like(keep)
+        n_keep = int(keep.sum())
+    idx = torch.nonzero(keep).squeeze(-1)
+
+    ply_path = out_dir / f"ckpt_{args.steps}.ply"
+    splat_path = out_dir / f"web_{args.steps}.splat"
+    export_splats(
+        means=means, scales=scales_log, quats=quats, opacities=opac_logit,
+        sh0=sh0, shN=shN, format="ply", save_to=str(ply_path))
+    export_splats(
+        means=means[idx], scales=scales_log[idx], quats=quats[idx], opacities=opac_logit[idx],
+        sh0=sh0[idx], shN=torch.zeros_like(shN[idx]),   # .splat 只有 SH0 颜色
+        format="splat", save_to=str(splat_path))
+
+    ply_mb = round(ply_path.stat().st_size / 1024 / 1024, 2)
+    splat_mb = round(splat_path.stat().st_size / 1024 / 1024, 2)
+    print(f"\n导出存档 PLY {ply_path}（{ply_mb} MB，{int(means.shape[0])} 高斯）")
+    print(f"导出上网用 .splat {splat_path}（{splat_mb} MB，{n_keep} 高斯 / 已按 opacity>="
+          f"{args.min_opacity} 裁剪，每点 32 字节）")
+
+    metrics = {
+        "steps": args.steps,
+        "sh_degree": args.sh_degree,
+        "splats": int(means.shape[0]),
+        "splats_exported": n_keep,
+        "train_images": len(train_idx),
+        "holdout_images": len(test_idx),
+        "resolution": [W, H],
+        "downsample": args.down,
+        "train_seconds": train_seconds,
+        "gpu_mem_mb": peak_mb,
+        "psnr": round(float(np.mean(ps)), 3),
+        "ssim": round(float(np.mean(ss)), 4),
+        "ply": str(ply_path),
+        "ply_mb": ply_mb,
+        "splat": str(splat_path),
+        "splat_mb": splat_mb,
+        "loss_curve": log[:: max(1, len(log) // 20)],
+        "device": torch.cuda.get_device_name(0) if DEV == "cuda" else "cpu",
+    }
+    (out_dir / "metrics.json").write_text(json.dumps(metrics, ensure_ascii=False, indent=2),
+                                          encoding="utf-8")
+    print(f"指标写入 {out_dir/'metrics.json'}")
     return 0
 
 

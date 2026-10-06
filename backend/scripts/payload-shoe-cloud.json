@@ -1,0 +1,21 @@
+{
+  "slug": "shoe",
+  "title": "运动鞋（本人实拍 · 云端 3 万步）",
+  "summary": "43 张手机环拍（12MP 原图）→ 降采样 2016px + 亮度归一 → COLMAP 注册 39/43（90.7%，903 对图像全部匹配）→ 租云端 GPU（vGPU-32GB，约 ¥2/次）用 gsplat 官方 DefaultStrategy 训练 30000 步，全分辨率 2016×1512 渲染，导出 66,904 个高斯（2.0MB）。留出 8 个视角按环绕方位角均匀分布，PSNR 14.44 / SSIM 0.7333，训练 659s、显存峰值 869MB。同数据三组对照（半分辨率全量稠密化 / 全分辨率保守稠密化 / 全分辨率中等稠密化）结论：画质瓶颈在拍摄（6 张糊片、31 个训练视角），不在算力。",
+  "technique": "3DGS",
+  "source": "self-capture",
+  "num_points": 66904,
+  "sh_degree": 3,
+  "iterations": 30000,
+  "train_seconds": 659,
+  "gpu_mem_mb": 869,
+  "capture_device": "手机（实拍）",
+  "capture_views": 43,
+  "psnr": 14.443,
+  "ssim": 0.7333,
+  "asset_url": "/demo/shoe.splat",
+  "asset_format": "splat",
+  "license": "自有照片（本人拍摄）",
+  "featured": false,
+  "published": true
+}
