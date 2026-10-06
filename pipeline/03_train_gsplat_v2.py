@@ -275,7 +275,8 @@ def main() -> int:
                 params["means"], params["quats"], activated_scales(params, scale_mode),
                 torch.sigmoid(params["opacities"]).squeeze(-1), colors,
                 viewmats[cam:cam + 1], Ks[cam:cam + 1], W, H, sh_degree=args.sh_degree,
-                backgrounds=bg_colors[cam].reshape(1, 1, 3).expand(H, W, 3).contiguous())
+                packed=False,   # 必须与 DefaultStrategy 的约定一致（同训练路径，见 229 行）——漏了它会断言失败
+                backgrounds=bg_colors[cam:cam + 1])
             ev = r[0].permute(2, 0, 1).unsqueeze(0)
             ps.append(t03.psnr(ev, gt))
             torch.cuda.empty_cache()
