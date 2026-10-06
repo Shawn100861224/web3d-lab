@@ -14,6 +14,7 @@
 | 10-05 17:44 | `@session:10086/20261005_174447_80b63c`<br>「继续上次会话 #2」 | 内存升级评估 + **修好 10086 网关（此前该 profile 的 cron 全部静默失败）** + 建内存盯价任务（投递到微信）+ 查看器按场景配初始机位（机器人头正面）+ **README 约定：交接/待办类内容不进 README** | `price-watches/dram-16gb-ddr5-5600-sodimm.json`、提交 `a5139e7` | 待统计 |
 | 10-05 23:53 → 10-06 00:39 | `@session:10086/20261005_002207_3ee8fa`（同一长会话） | 用户本人实拍保温杯 43 张 → COLMAP → 训练 12000 步 → `bottle.splat`；场景 `bottle` 注册进后端 DB | `~/web3d/data/bottle/`、`frontend/public/demo/bottle.splat` | 待统计 |
 | 10-06 11:40 | 同上（续） | **实拍场景上线**为第 6 个场景（`bottle`，受限对照）；修正 DB 里未证实的「43/43 调优 SIFT」文案（改为只写实测事实）；实测**尺寸统一并不能救这批照片**（15/43 → 15/43）；两次调优 SIFT 实验都被 **WSL 虚拟机整机重启**静默杀掉（判据与缓解见技能 `web3d-lab`） | 提交 `ed318a8`、`ef74fcd`（HANDOFF+坑表）、`backend/scripts/payload-bottle.json`、技能 `web3d-lab` 更新 | 待统计 |
+| 10-06 12:40 → 14:05 | 同上（续） | **用户实拍第 2 个场景「运动鞋」全流程跑通并上线**（`shoe`，第 7 个场景）：数据线拉 53 张 12MP 原图 → Windows 侧降采样/亮度归一 → COLMAP **39/43 注册（90.7%）**、903/903 对匹配 → gsplat 15000 步 → 28,255 高斯 → 上线（资产 md5 校验一致）。期间排掉三类故障：WSL 整机重启、`prep_unify_size.py` 撑爆 VM、**WSL 单次分配 ~300MB 硬墙**（公式见技能）。**结论：本机自训画质到顶（自训全糊 vs 官方示例清晰），要好看得上云端 GPU** | 提交 `5e920cb`、`pipeline/prep_crop_roi.py`、`pipeline/03_train_gsplat.py`（新增 `--densify-grad`）、技能 `web3d-lab` 三条新坑 | 待统计 |
 
 ## 二、现在到哪了
 
@@ -66,6 +67,11 @@
 | 后台长任务把输出管给 `tail` | ❌ 管道缓冲 → 进程被 OOM 杀掉时日志只剩「卡在某一步」，错误全丢（本次调优 SIFT 就栽在这）。直接 `>> 日志 2>&1` + 每步打印退出码 |
 | WSL 里调优 SIFT 的内存红线 | `max_num_features 32768` + `estimate_affine_shape 1` + `domain_size_pooling 1` 在 7.9G 内存的 WSL 里被 **OOM 杀掉**（database.db 建了 0 字节、无报错、进程消失）。先用便宜三件套：`peak_threshold 0.004` + `SiftMatching.guided_matching 1` + 放宽 `Mapper.*min_num_inliers` |
 | 上线实拍场景漏提交资产 | `frontend/public/demo/*.splat` 极易漏 `git add`（JSON 里有引用、仓库里没文件）→ 线上查看器 404。发布后必须 `curl` 线上资产 + **md5 对比本地** |
+| **WSL 重活被"整机收走"** | 根因：`.wslconfig memory=8GB` 在 16GB 宿主上跑 COLMAP，WSL 的 vmem 把宿主挤爆 → Windows 收走整个 VM（退出码 1、日志停在半途、**无 OOM 记录**、`/proc/uptime` 只有几秒）。已处理：① 上限收到 **4GB**（备份 `.wslconfig.bak-*`）；② 图片改在 **Windows 侧**降采样到 2016×1512 + 亮度归一（430MB → 24MB）；③ COLMAP 脚本改成**分阶段幂等续跑**（每步先查 DB，已完成就跳过）。完整版见技能 `web3d-lab` |
+| 12MP 图别在 WSL 里做 PIL 预处理 | `pipeline/prep_unify_size.py` 一次加载 50+ 张 12MP 图会撑爆 4–8GB 的 VM（实测写出 35/53 就被杀）。改在 Windows 侧流式处理，再喂给 COLMAP |
+| **WSL 单次显存分配 ~300MB 硬墙** | 训练里 `memory allocation failed ... allocate 350MB (free: 5.0GB)` **不是警告而是硬上限**：单次分配 >~300MB 必失败（与剩余显存无关）。那个分配 = 高斯数 × 渲染瓦片数 × 8B。实测 62,885×768×8=386MB → **卡死**（十几分钟无新 step）；28,255×768×8=172MB → 正常。`--max-splats` 按此公式倒推，别按总显存 |
+| **本机自训画质天花板** | 对照实测：**官方示例同一浏览器里清晰**，而自训的合成球/保温杯/运动鞋（输入质量很好：90.7% 注册、903/903 匹配）**全糊**。三版尝试（2.8 万整帧=雾 / 6.1 万整帧=卡死 / 6.1 万裁剪=放射伪影）都没能出可辨认物体。原因链：8GB 卡 → WSL 可用显存 ~1.3GB → 只能 down=8 → 高斯被单次分配墙压到几万。**要能看的自训场景直接上云端 GPU，别在本机耗时间** |
+| 裁到主体 | `pipeline/prep_crop_roi.py`（自动同步修 `cameras.txt` 的 cx/cy 与 W/H）。裁剪=移动主点，不改内参必糊 |
 
 ## 五、技能清单（已装，无需再去找）
 
