@@ -1,11 +1,11 @@
 # PROGRESS — 3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）
 
-> 自动区由 `devloop.py` 维护，不要手改（改了会被覆盖）。最后更新：2026-10-05 01:00
+> 自动区由 `devloop.py` 维护，不要手改（改了会被覆盖）。最后更新：2026-10-07 01:35
 
 <!-- DEVLoop:AUTO:START -->
 ## 当前阶段
 
-**模块开发**　（模块 7/9 已完成）
+**模块开发**　（模块 9/9 已完成）
 
 ## 模块进度
 
@@ -18,8 +18,8 @@
 | 5 | 访问统计 | 已完成 | 1 | 通过：pytest tests -q -> 19 passed（含 30s 去重、独立访客去重、splat_load 单独计数、days 越界 422、+08 时区分桶）；真实 HTTP：POST /api/events -> 201 {id:1,deduped:false}，同参数 30s 内重发 -> 202 deduped:true；GET /api/stats 由 total_views=0 变为 3、splat_loads=2、per_scene=[(robot-head,2)]，日桶落在本地 2026-10-05；前端首页统计卡显示「3 累计浏览 / 2 独立访客 / 2 场景加载成功」+ 14 天 SVG 曲线，查看器页显示「已被浏览 2 次」——皆为浏览器真实上报后回读 |
 | 6 | 留言板 | 已完成 | 1 | 通过：pytest tests -q -> 28 passed（含空列表200、原文存储、限流、按场景过滤、越界422）；真实 HTTP：连续 3 条 201、第 4 条 429「请 600 秒后再试」+ Retry-After 头；读回确认留言正文里的 <img src=x onerror=...> 原样保存（未被预转义）且响应不含 client_id；前端浏览器实测：注入载荷 imgX=0 / scriptNodes=0 / window.__xssFired 未定义 / 载荷只以文本呈现（React 默认转义），真人填写表单提交 -> 「留言已提交」+ 列表新增 + 库中回读，再提交第 4 次 -> 界面显示「提交太频繁：留言太频繁，请 574 秒后再试」；seed_guestbook.py --reset 清掉验证垃圾、灌 3 条示例，页面回读「共 3 条」 |
 | 7 | 个人主页与方法对比 | 已完成 | 1 | 通过：tsc 无错 + npm run build 通过；浏览器 /about -> 六个板块全部渲染（方向/真实做过的事×5/小尝试与踩坑/雷达/用AI过程/下一步），无 dangerouslySetInnerHTML（改用 JSX，全页仅 Vite dev 自带 3 个 script）；项目雷达读取 public/radar.json（从原静态页并入的真实抓取数据）：116 仓库 / 31 我读过 / 8 星速爆发 / 685,077 合计星标、11 个分类计数正确、搜索+排序选择器就位；浏览器 /methods -> 表格 9 行 × 8 列（几何基元/表面质量/规模/速度/压缩/开源/对我意味着什么），每行「为什么和我有关」列均有内容 |
-| 8 | 训练管线 | 待办 | 0 |  |
-| 9 | 部署 | 待办 | 0 |  |
+| 8 | 训练管线 | 已完成 | 1 | 通过：云端 GPU（AutoDL vGPU-32GB，31GB 显存）跑 gsplat DefaultStrategy 30000 步，全分辨率 2016x1512：31 训练 + 8 留出视角（--holdout-mode ring 按相机方位角均匀留出，修掉 tail 留出一整段连续弧≈70°盲区）。三组同数据对照：down=2 全量稠密化 647,860 高斯 / 留出 PSNR 14.46 / SSIM 0.678；down=1 保守稠密化 14,612 高斯 / 14.52 / 0.765；down=1 中等稠密化 66,904 高斯 / 14.443 / 0.7333（上线版：训练 659s，显存峰值 869MB，资产 2,140,928B）。本机冒烟 300 步导出 web_300.splat=1268 点/40,576B（字节数被 32 整除）；.splat 记录必须含四元数（32B/条）由浏览器报错验证。 |
+| 9 | 部署 | 已完成 | 1 | 通过：EdgeOne Makers 改走官方 CLI 自动部署：edgeone login --site china → edgeone makers deploy ./frontend/dist-edgeone -n web3d-lab --json → projectId=makers-jtlpapfcff7f、deploymentId=dp0idbc84qru、status=success。真机验收 https://www.shawnlab.cn/scenes/shoe/：#viewer-state data-status=ready、data-splats=66904、data-bytes=2140928、data-load-ms=3120、data-error 空，面板 PSNR 14.44dB / SSIM 0.7333 / 30,000 步。两处入口资产 md5 与本地一致 dc972cbc0a7392f4e28fc8e69cd274b9，GitHub Actions 37502296567 success 39s。教训：Pages 版（base=/web3d-lab/）deploy 到 EdgeOne 会白屏，EdgeOne 必须用 build-for-edgeone.sh 的 dist-edgeone（base=/）。 |
 
 ## 问题与解决方案
 
