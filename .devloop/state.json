@@ -2,7 +2,7 @@
   "goal": "3DGS 在线重建查看器 + 个人主页（前后端一体，服务双足实验室 3D 方向考核）",
   "stage": "模块开发",
   "created": "2026-10-05 00:16",
-  "updated": "2026-10-05 01:00",
+  "updated": "2026-10-07 01:35",
   "issues": [],
   "blockers": [],
   "e2e": {
@@ -131,18 +131,28 @@
     },
     {
       "name": "训练管线",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-07 01:35",
+          "text": "通过：云端 GPU（AutoDL vGPU-32GB，31GB 显存）跑 gsplat DefaultStrategy 30000 步，全分辨率 2016x1512：31 训练 + 8 留出视角（--holdout-mode ring 按相机方位角均匀留出，修掉 tail 留出一整段连续弧≈70°盲区）。三组同数据对照：down=2 全量稠密化 647,860 高斯 / 留出 PSNR 14.46 / SSIM 0.678；down=1 保守稠密化 14,612 高斯 / 14.52 / 0.765；down=1 中等稠密化 66,904 高斯 / 14.443 / 0.7333（上线版：训练 659s，显存峰值 869MB，资产 2,140,928B）。本机冒烟 300 步导出 web_300.splat=1268 点/40,576B（字节数被 32 整除）；.splat 记录必须含四元数（32B/条）由浏览器报错验证。"
+        }
+      ],
       "issues": []
     },
     {
       "name": "部署",
-      "status": "pending",
-      "attempts": 0,
+      "status": "done",
+      "attempts": 1,
       "fails": 0,
-      "notes": [],
+      "notes": [
+        {
+          "at": "2026-10-07 01:35",
+          "text": "通过：EdgeOne Makers 改走官方 CLI 自动部署：edgeone login --site china → edgeone makers deploy ./frontend/dist-edgeone -n web3d-lab --json → projectId=makers-jtlpapfcff7f、deploymentId=dp0idbc84qru、status=success。真机验收 https://www.shawnlab.cn/scenes/shoe/：#viewer-state data-status=ready、data-splats=66904、data-bytes=2140928、data-load-ms=3120、data-error 空，面板 PSNR 14.44dB / SSIM 0.7333 / 30,000 步。两处入口资产 md5 与本地一致 dc972cbc0a7392f4e28fc8e69cd274b9，GitHub Actions 37502296567 success 39s。教训：Pages 版（base=/web3d-lab/）deploy 到 EdgeOne 会白屏，EdgeOne 必须用 build-for-edgeone.sh 的 dist-edgeone（base=/）。"
+        }
+      ],
       "issues": []
     }
   ]
