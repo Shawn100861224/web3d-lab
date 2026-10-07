@@ -1,5 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
+import { fetchScenes } from './lib/api'
 import { useBackend } from './lib/useBackend'
 
 /** 公开联系方式（本人确认公开的邮箱） */
@@ -11,6 +13,24 @@ const CONTACT_EMAIL = '18711505157@163.com'
  */
 export default function App() {
   const mode = useBackend(true)
+  // 页头那条技术栏里的场景数**必须来自接口**：曾经硬编码写死成 5，
+  // 而实际已发布 7 个 —— 站点上的数字要么实时取、要么不写。
+  const [sceneCount, setSceneCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    fetchScenes({ limit: 200 })
+      .then((r) => {
+        if (alive) setSceneCount(r.total)
+      })
+      .catch(() => {
+        if (alive) setSceneCount(null)
+      })
+    return () => {
+      alive = false
+    }
+  }, [])
+
 
   return (
     <div className="shell">
@@ -47,7 +67,7 @@ export default function App() {
           后端测试 <b>36</b> 项通过
         </span>
         <span>
-          场景 <b>5</b> 个
+          场景 <b>{sceneCount ?? '—'}</b> 个
         </span>
       </div>
 
