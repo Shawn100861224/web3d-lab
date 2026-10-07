@@ -66,6 +66,41 @@ def stats(name: str, xyz: np.ndarray, scale: np.ndarray, rgba: np.ndarray) -> No
     )
 
 
+def center_of_mass(xyz: np.ndarray, refine: bool = True) -> np.ndarray:
+    """估物体中心：先用全体中位点，再用「离它最近的 60% 点」重新算一次。
+
+    为什么要 refine：整体中位点会被那一圈糊背景往旁边拽；迭代一次就能落到物体本体上。
+    """
+    c = np.median(xyz, axis=0)
+    if not refine:
+        return c
+    d = np.linalg.norm(xyz - c, axis=1)
+    core = xyz[d <= np.percentile(d, 60)]
+    return np.median(core, axis=0) if len(core) > 50 else c
+
+
+def neighbor_counts(xyz: np.ndarray, radius: float) -> np.ndarray:
+    """数每个高斯在给定半径内的邻居数（用体素网格做，避免 O(n²)）。
+
+    孤立点（邻居很少）几乎都是浮动点；连贯表面的高斯邻居很多。这是"保留清晰部分"最贴切的一条判据 ——
+    比按尺度/透明度硬筛更稳，因为它看的是**局部结构**，不是单个高斯的属性。
+    """
+    cell = float(radius)
+    keys = np.floor(xyz / cell).astype(np.int64)
+    grid: dict[tuple[int, int, int], int] = {}
+    for k in map(tuple, keys):
+        grid[k] = grid.get(k, 0) + 1
+
+    offsets = [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1) for dz in (-1, 0, 1)]
+    counts = np.empty(len(xyz), dtype=np.int64)
+    for i, k in enumerate(map(tuple, keys)):
+        total = 0
+        for dx, dy, dz in offsets:
+            total += grid.get((k[0] + dx, k[1] + dy, k[2] + dz), 0)
+        counts[i] = total - 1  # 减去自己
+    return counts
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("src", type=Path)
@@ -74,6 +109,10 @@ def main() -> int:
     ap.add_argument("--scale-k", type=float, default=6.0, help="丢掉最大尺度 > k×尺度中位数的高斯（大团子）")
     ap.add_argument("--clamp-scale-k", type=float, default=0.0, help="把最大尺度压到 k×中位数（0=不压）")
     ap.add_argument("--dist-pct", type=float, default=99.0, help="丢掉离中心超过该百分位距离的高斯（浮动点）")
+    ap.add_argument("--keep-radius", type=float, default=0.0, help="只保留离物体中心该半径内的内容（0=不裁）")
+    ap.add_argument("--fade-to", type=float, default=0.0, help="从 keep-radius 到该半径之间把 alpha 线性衰减到 0")
+    ap.add_argument("--neighbor-radius", type=float, default=0.0, help="密度过滤的邻域半径（世界单位，0=不做密度过滤）")
+    ap.add_argument("--min-neighbors", type=int, default=4, help="邻域内少于该数量的高斯视为孤立点丢掉")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
@@ -84,33 +123,65 @@ def main() -> int:
     smax = scale.max(axis=1)
     alpha = rgba[:, 3].astype(np.float32) / 255.0
     keep = np.ones(len(xyz), dtype=bool)
+    ran_crop = False
+
+    # ① 半径裁切 + 透明度衰减（先做，后面的尺度统计就只反映物体本体）
+    if args.keep_radius > 0:
+        ran_crop = True
+        centre = center_of_mass(xyz)
+        fade_to = args.fade_to if args.fade_to > args.keep_radius else args.keep_radius * 1.4
+        dist = np.linalg.norm(xyz - centre, axis=1)
+        weight = np.clip((fade_to - dist) / (fade_to - args.keep_radius), 0.0, 1.0)
+        outside = int((dist > fade_to).sum())
+        faded = int(((dist > args.keep_radius) & (dist <= fade_to)).sum())
+        keep &= dist <= fade_to
+        alpha = alpha * weight
+        print(f"  ① 裁切：中心 {centre.round(3)}，保留半径 {args.keep_radius}→淡出 {fade_to:.2f}")
+        print(f"     直接丢掉（超出淡出半径）{outside:,} 个；渐隐 {faded:,} 个；保留 {int(keep.sum()):,} 个")
+        print(f"     圆形边界（r={args.keep_radius}）内的尺度中位 {np.median(smax[dist <= args.keep_radius]):.4f}")
+
+    # ② 密度过滤：丢掉孤立点（周围邻居太少的）
+    if args.neighbor_radius > 0:
+        counts = neighbor_counts(xyz, args.neighbor_radius)
+        step = counts >= args.min_neighbors
+        kept_n = int(keep.sum())
+        dropped_n = int((keep & ~step).sum())
+        print(
+            f"  ② 密度：半径 {args.neighbor_radius} 内邻居 ≥ {args.min_neighbors}"
+            f"（当前候选 {kept_n:,} 个中丢 {dropped_n:,} 个孤立点；"
+            f"邻居数中位 {int(np.median(counts[keep]))}）"
+        )
+        keep &= step
 
     step = alpha >= args.min_alpha
-    print(f"  ① alpha ≥ {args.min_alpha}: 保留 {step.sum():,} / {len(xyz):,}（丢 {len(xyz) - step.sum():,}）")
+    print(f"  ③ alpha ≥ {args.min_alpha}: 保留 {step.sum():,} / {len(xyz):,}（丢 {len(xyz) - step.sum():,}）")
     keep &= step
 
     med = float(np.median(smax[keep])) if keep.any() else 0.0
     if args.scale_k > 0 and med > 0:
         step = smax <= args.scale_k * med
-        print(f"  ② 最大尺度 ≤ {args.scale_k}×中位数({med:.4f}): 再丢 {(keep & ~step).sum():,}")
+        print(f"  ④ 最大尺度 ≤ {args.scale_k}×中位数({med:.4f}): 再丢 {(keep & ~step).sum():,}")
         keep &= step
 
-    if len(xyz[keep]) > 100:
+    if len(xyz[keep]) > 100 and not ran_crop:
         centre = xyz[keep].mean(axis=0)
         dist = np.linalg.norm(xyz[keep] - centre, axis=1)
         thr = float(np.percentile(dist, args.dist_pct))
         step = dist <= thr
-        print(f"  ③ 到中心距离 ≤ p{args.dist_pct}({thr:.3f}): 再丢 {(~step).sum():,}")
+        print(f"  ⑤ 到中心距离 ≤ p{args.dist_pct}({thr:.3f}): 再丢 {(~step).sum():,}")
         idx = np.flatnonzero(keep)
-        drop = idx[~step]
-        keep[drop] = False
+        keep[idx[~step]] = False
 
-    xyz2, scale2, rgba2, rot2 = xyz[keep], scale[keep], rgba[keep], rot[keep]
+    xyz2, scale2, rot2 = xyz[keep], scale[keep], rot[keep]
+    alpha2 = np.clip(alpha[keep], 0.0, 1.0)
+    rgba2 = rgba[keep].copy()
+    rgba2[:, 3] = (alpha2 * 255).round().astype(np.uint8)
+
     if args.clamp_scale_k > 0 and len(scale2):
         cap = args.clamp_scale_k * float(np.median(scale2.max(axis=1)))
         before = int((scale2.max(axis=1) > cap).sum())
         scale2 = np.minimum(scale2, cap)
-        print(f"  ④ 把 {before:,} 个超大高斯压到 ≤ {cap:.4f}")
+        print(f"  ⑤ 把 {before:,} 个超大高斯压到 ≤ {cap:.4f}")
 
     stats("清理后", xyz2, scale2, rgba2)
     kept_pct = len(xyz2) / len(xyz) * 100
