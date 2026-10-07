@@ -1,0 +1,21 @@
+{
+  "slug": "shoe-37",
+  "title": "运动鞋·剔除糊片重训版（37 张）",
+  "summary": "把清晰度实测最低的 6 张糊片从 COLMAP 模型里剔除后（43 → 37 张，其中 27 张训练 / 8 张留出评估），同一套 gsplat 参数重训 30000 步。**留出视角 PSNR 14.44 → 15.41 dB、SSIM 0.7333 → 0.7567**（原版见「运动鞋（本人实拍 · 云端 3 万步）」）。渲染对照图（左=训练后渲染、右=真实照片）的判定是：从「糊成一团」变成「一眼能认出是鞋、但纹理细节仍不足」。结论：剔除糊片是有效的、但只值约 +1 dB —— 真正的瓶颈仍是拍摄（单圈、约 31 个有效视角）。",
+  "technique": "3DGS",
+  "source": "self-trained",
+  "num_points": 88088,
+  "sh_degree": 3,
+  "iterations": 30000,
+  "train_seconds": 647,
+  "gpu_mem_mb": 897,
+  "capture_device": "手机（实拍）",
+  "capture_views": 37,
+  "psnr": 15.405,
+  "ssim": 0.7567,
+  "asset_url": "/demo/shoe-37.splat",
+  "asset_format": "splat",
+  "thumbnail_url": "/demo/shoe.jpg",
+  "featured": false,
+  "published": true
+}
