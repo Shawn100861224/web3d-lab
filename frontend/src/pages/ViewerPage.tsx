@@ -30,6 +30,10 @@ export const EMPTY_STATS: ViewerStats = {
  */
 const SCENE_VIEW: Record<string, { az: number; el?: number }> = {
   'robot-head': { az: 180, el: 10 },
+  // shoe：资产绕 X 轴翻 180° 之后，网页坐标 = (180 − 拍摄方位角, −拍摄仰角)。
+  // az 153 / el 14 对应实拍照片 038 的机位（鞋头朝左、鞋底朝下，覆盖最好的一侧）。
+  // 原先的默认 (0, 12) 落在两台真实相机之间约 40° 的空档里，第一眼看到的是最弱的方向。
+  shoe: { az: 153, el: 14 },
 }
 
 /** 允许用 URL 参数临时覆盖机位，便于逐场景定正面（不影响默认行为）。 */
