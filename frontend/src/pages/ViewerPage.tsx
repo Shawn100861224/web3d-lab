@@ -173,7 +173,12 @@ export default function ViewerPage() {
             </div>
           )}
 
-          <div className="hud">拖拽旋转 · 滚轮缩放 · 右键平移 · Home 键复位</div>
+          <div className="hud">
+            {typeof window !== 'undefined' &&
+            (window.matchMedia?.('(hover: none)').matches || 'ontouchstart' in window)
+              ? '单指拖动旋转 · 双指捏合缩放 · 双指拖动平移'
+              : '拖拽旋转 · 滚轮缩放 · 右键平移 · Home 键复位'}
+          </div>
 
           <div
             id="viewer-state"
