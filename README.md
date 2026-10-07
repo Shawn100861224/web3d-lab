@@ -35,7 +35,7 @@
 | 6 | 留言板 | POST/GET 通，注入 `<script>` 被转义，有限流 |
 | 7 | 个人主页与方法对比 | 并入 `lab/web-3d` 的内容，3DGS 方法对比成页 |
 | 8 | 训练管线 | COLMAP → 3DGS → 导出 .spz + 指标回写（**需要照片**） |
-| 9 | 部署 | docker-compose 起得来 + 公网链接（**发布前问用户**） |
+| 9 | 部署 | 一键脚本组装 + 命令行部署（EdgeOne Pages 静态 + Cloud Functions 后端 + Neon Postgres），`scripts/verify-cloud.sh` 可重复验收（**发布前问用户**） |
 
 ## 本地开发命令（模块 1 起可用）
 
