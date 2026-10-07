@@ -183,7 +183,9 @@ export default function GuestbookPage() {
       {shown === null && <p className="note">正在读取…</p>}
       {shown !== null && shown.length === 0 && (
         <p className="note" id="gb-empty">
-          还没有留言，做第一个吧。
+          {offline
+            ? '这里目前没有任何留言 —— 静态演示版没有后端，写不进来；留言功能本身是完整实现的（限流、注入防护都有测试覆盖），本地起后端就能真的写入。'
+            : '还没有留言，做第一个吧。'}
         </p>
       )}
       {shown !== null && shown.length > 0 && (
