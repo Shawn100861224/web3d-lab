@@ -39,8 +39,12 @@ def main() -> int:
         check("结构为 {total, items}", set(doc) == {"total", "items"}, json.dumps(doc))
 
         print("[3] 写入（含中文，验证 UTF-8 往返）")
+        # 用一次性 slug 且结束时自清理：早期版本固定用 desk-chair，第二次跑就会撞 409、
+        # 断言全崩（把「脚本不可重复运行」当成产品失败）——这里是端到端验收踩出来的。
+        import uuid
+        tmp_slug = f"verify-{uuid.uuid4().hex[:8]}"
         payload = {
-            "slug": "desk-chair",
+            "slug": tmp_slug,
             "title": "桌面椅子（小场景）",
             "summary": "手机环拍 42 张，gsplat 训练 7k 步",
             "technique": "3DGS",
@@ -56,13 +60,11 @@ def main() -> int:
             "lpips": 0.2113,
             "asset_url": "/demo/desk-chair.spz",
             "asset_format": "spz",
-            "featured": True,
+            "featured": False,
+            "published": False,
         }
         r = c.post("/api/scenes", json=payload)
-        if r.status_code == 409:  # 已经存在 → 先删掉重来
-            check("重复 slug 返回 409", True, r.json().get("detail", ""))
-        else:
-            check("POST /api/scenes 201", r.status_code == 201, r.text[:200])
+        check("POST /api/scenes 201", r.status_code == 201, r.text[:200])
         created = r.json()
         check("中文标题往返无损", created.get("title") == payload["title"], created.get("title", ""))
 
@@ -70,7 +72,7 @@ def main() -> int:
         r = c.get("/api/scenes")
         doc = r.json()
         check("列表 total>=1", doc["total"] >= 1, f"total={doc['total']}")
-        r = c.get("/api/scenes/desk-chair")
+        r = c.get(f"/api/scenes/{tmp_slug}")
         check("详情 200 且 psnr=27.84", r.status_code == 200 and r.json()["psnr"] == 27.84)
         r = c.get("/api/scenes", params={"technique": "2DGS"})
         check("technique 过滤生效", r.json() == {"total": 0, "items": []}, r.text)
@@ -86,6 +88,16 @@ def main() -> int:
         check("缺必填字段 422", r.status_code == 422)
         r = c.get("/api/scenes", params={"limit": 0})
         check("越界 limit 422", r.status_code == 422)
+
+        print("[6] 清理（把这次造的一次性场景直接删掉，保证脚本可重复运行）")
+        import sqlite3
+        from pathlib import Path
+        db = Path(__file__).resolve().parent.parent / "data" / "web3d.db"
+        conn = sqlite3.connect(db)
+        n = conn.execute("delete from scene where slug = ?", (tmp_slug,)).rowcount
+        conn.commit()
+        conn.close()
+        check("已清理临时场景行", n == 1, f"删除 {n} 行")
 
     print()
     if FAILURES:
