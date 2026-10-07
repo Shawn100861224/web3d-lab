@@ -1,0 +1,15 @@
+{
+  "slug": "shoe-clean",
+  "title": "运动鞋·后处理版（去浮动点，同一次训练）",
+  "summary": "与「运动鞋（本人实拍 · 云端 3 万步）」是**同一次训练**的产物，唯一区别是导出后做了一遍后处理：丢掉 alpha<0.2 的近乎全透明高斯、砍掉尺度超过 4×中位数的大团子、并把超大高斯压到 3×中位数、剔除离主体 p98.5 之外的孤立点。结果 66,904 → 49,352 个高斯（保留 74%），主体轮廓更清楚、周围杂质更少。注意：PSNR/SSIM 是对**原模型**在留出视角上测的，此版本未重新评估，所以这里不填指标。",
+  "technique": "3DGS",
+  "source": "self-trained",
+  "num_points": 49352,
+  "asset_url": "/demo/shoe-clean.splat",
+  "asset_format": "splat",
+  "thumbnail_url": "/demo/shoe.jpg",
+  "capture_device": "手机（实拍）",
+  "capture_views": 43,
+  "featured": false,
+  "published": true
+}

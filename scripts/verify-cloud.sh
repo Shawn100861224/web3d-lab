@@ -43,7 +43,8 @@ CB="cb=$RANDOM$RANDOM"
 echo "目标：$DOMAIN"
 echo "── 后端接口（云函数，应返回 JSON）──"
 check "健康检查"        "/api/health?$CB"            json "web3d-lab API"
-check "场景列表"        "/api/scenes?limit=100&$CB"  json '"total":7'
+# 场景数不写死：站点会加场景，写死数字会让验收脚本自己变成假警报（这里只断言字段在）。
+check "场景列表"        "/api/scenes?limit=100&$CB"  json '"total":'
 check "留言板列表"      "/api/guestbook?limit=5&$CB" json '"items"'
 check "访问统计"        "/api/stats?days=14&$CB"     json '"per_scene"'
 echo "── 对照组与泄漏检查 ──"
