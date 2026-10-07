@@ -64,7 +64,7 @@ export default function App() {
         <span>3DGS · Spark 2.3.1</span>
         <span>FastAPI + SQLModel</span>
         <span>
-          后端测试 <b>36</b> 项通过
+          后端测试 <b>39</b> 项通过
         </span>
         <span>
           场景 <b>{sceneCount ?? '—'}</b> 个
