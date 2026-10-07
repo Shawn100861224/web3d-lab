@@ -14,9 +14,9 @@
 |---|---|---|
 | 前端 | Vite + React + TypeScript | 页面/路由 |
 | 3D 渲染 | Three.js + `@sparkjsdev/spark` | 支持 ply/spz/splat/ksplat；官方有 R3F 模板 |
-| 后端 | Python 3.12 + FastAPI + SQLModel + SQLite | 与训练脚本同语言，任务队列不用跨语言 |
+| 后端 | Python 3.10 + FastAPI + SQLModel（本地 SQLite / 线上 PostgreSQL） | 与训练脚本同语言，任务队列不用跨语言 |
 | 训练 | WSL2 Ubuntu-24.04 + PyTorch(cu12x) + gsplat + COLMAP | 本机 RTX 5060 8GB，只做小场景（单物体/桌面） |
-| 部署 | docker-compose（nginx + uvicorn）+ Cloudflare Tunnel | 免服务器费用即可给公网链接 |
+| 部署 | EdgeOne Pages（静态）+ EdgeOne Cloud Functions（FastAPI 后端）+ Neon 免费 Postgres | 同域 `/api/*`、免备案、¥0；GitHub Pages 作为纯静态镜像 |
 | 测试 | pytest + httpx（后端）、Playwright（端到端） | 验收用真实浏览器点一遍 |
 
 **明确不用 Electron**：交付形态是「一个链接」。Electron 要下载安装包、手机打不开、3D 能力零增益；将来真要桌面版，用 Tauri 套壳（~5MB）而不是现在。

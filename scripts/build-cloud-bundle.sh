@@ -18,7 +18,11 @@ mkdir -p "$OUT"
 
 cp -r "$ROOT/frontend/dist-edgeone/." "$OUT/"
 cp -r "$ROOT/cloud/cloud-functions" "$OUT/cloud-functions"
-cp -r "$ROOT/backend/app" "$OUT/web3d_app"
+# 后端包必须放进 cloud-functions/ 里：实测平台构建器只把 cloud-functions/ 目录
+# 打进函数包，放在包根目录的模块在运行时报 No module named 'web3d_app'，
+# 而平台此时返回的是 404（不是 500），排查起来很绕。
+cp -r "$ROOT/backend/app" "$OUT/cloud-functions/web3d_app"
+
 find "$OUT" -name __pycache__ -type d -exec rm -rf {} + 2>/dev/null || true
 
 # 自检：包里除入口文件外，不允许出现模块级的 `app = FastAPI(` 写法

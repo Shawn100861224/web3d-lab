@@ -330,20 +330,22 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 
 1. **拍照片**（只有本人能做）：手机环拍**单个物体或桌面** 30–50 张（多角度、相邻重叠 60%+、光照均匀、别拍糊、表面有纹理最好）
    → 给我照片后跑 `pipeline/run_all.sh`，把线上那个「合成采集（链路验证场景）」换成实拍场景
-2. **后端上线（让留言板与访问统计真正在线）** —— 2026-10-07 逐条查证官方文档后的真实工期（旧版此处写的"1–2 小时"是错的：只算了代码，没算存储无状态）：
+2. ✅ **后端已上线（2026-10-07 完成并验收）** —— 形态是 **EdgeOne Cloud Functions（Python 3.10 + FastAPI）+ Neon 免费 Postgres**，
+   与前端同项目同域（`/api/*` 同源，免 CORS、免备案、¥0）。访问统计与留言板现在**真的在线**（首页统计、留言板表单都是活的）。
+   验收证据：`bash scripts/verify-cloud.sh` 在预览域与正式域各 **7/7 通过**（健康检查/场景 7 个/留言/统计/SPA 兜底对照/无路由泄漏/首页）；
+   线上首页实测显示来自数据库的实时统计，留言板显示可写表单。
 
-   | 路径 | 工期 | 钱 | 前提 |
-   |---|---|---|---|
-   | **A. EdgeOne Python 云函数 + Supabase 免费 Postgres** | **3–5 小时** | ¥0 | 需注册 Supabase（约 20 分钟）并把连接串交给我 |
-   | B. 香港轻量服务器跑现有 docker-compose | 1.5–2.5 小时 | ~¥60–70/月 | 要花钱；香港节点免备案 |
-   | C. Cloudflare Tunnel 挂本机 | ~1 小时 | ¥0 | 电脑必须常开（评审时关机=白屏）✗ |
+   **重新部署**（改完后端或前端后）：
+   ```bash
+   cd frontend && bash scripts/build-for-edgeone.sh     # 改了前端才需要
+   cd .. && bash scripts/build-cloud-bundle.sh           # 组装部署包（含防泄漏自检）
+   edgeone makers deploy ./deploy/cloud -n web3d-lab     # 约 2 分钟
+   bash scripts/verify-cloud.sh                          # 可重复验收
+   ```
+   环境变量（改的时候用；**先 `edgeone makers link -n web3d-lab`**）：`DATABASE_URL`=Neon 池化连接串（`postgresql+pg8000://`，不带查询参数）、
+   `WEB3D_API_PREFIX`=`/`（不接受空串）。数据库密码只存在于 `backend/.env` 与 EdgeOne 环境变量里，**不进 git**（已确认被忽略）。
 
-   **已查证的关键约束（别再照旧猜）**：
-   - EdgeOne Cloud Functions **确实支持 Python 3.10，且原生支持 FastAPI**（ASGI 模式；文件放 `./cloud-functions/` 即自动路由，`requirements.txt` 自动装依赖，`scripts/tests/.venv` 会被排除）✓
-   - **但函数本地文件系统不持久**（官方原话：涉及文件传输时不建议存长期数据）→ **SQLite 不能直接搬**，必须换外部库。
-   - EdgeOne 自家存储 **对 Python 都不可用**：KV「当前仅支持在 Edge Functions 中使用」；Blob「当前提供 Node.js SDK（@edgeone/pages-blob），其他运行时的 SDK 正在开发中」。→ 持久化只能走外部数据库（官方有 **Supabase 集成** 文档），或把后端改写成 Node.js 函数（≈重写，✗）。
-   - 免费额度够用：Cloud Functions **100 万次/月**、总内存时长 50 万 GB-s/月、构建 500 次/月；代码包上限 128 MB、单请求最长 120 秒（默认 30 秒）。
-   - 加速区域保持「全球可用区（不含中国大陆）」→ **免备案**；函数地域该区域下默认 `ap-singapore`（与该站现有区域一致）。
-   - 同项目同域：函数与前端在同一 EdgeOne 项目 → `/api/*` 同源，**免 CORS**（后端现有 CORS 中间件可去掉）。
+   ⚠️ 云函数的坑表见技能 `web3d-lab` 的「后端云端上线」一节（只读文件系统、只打包 `cloud-functions/`、.zip 被丢弃、
+   驱动要纯 Python、前缀行为不一致、SPA 兜底导致的状态码误判…每条都实测过）。**别再从零试**。
 3. **可选：给 EdgeOne 项目绑域名**（同样需要先有域名，国内节点可能还需 ICP 备案）→ 换来更快的国内 CDN
 4. 实验室任务线：按学长要求打 C++ / Linux 基础（WSL2 环境已就绪，首个 C++ 程序与 CMake 多文件项目已跑通）

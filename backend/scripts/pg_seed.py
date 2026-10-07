@@ -26,14 +26,22 @@ EDITABLE_FIELDS = (
     "summary",
     "technique",
     "source",
-    "asset_path",
-    "ply_path",
-    "splat_count",
+    "num_points",
+    "sh_degree",
+    "iterations",
+    "train_seconds",
+    "gpu_mem_mb",
+    "capture_device",
+    "capture_views",
     "psnr",
+    "ssim",
+    "lpips",
+    "asset_url",
+    "asset_format",
+    "thumbnail_url",
+    "license",
     "featured",
     "published",
-    "trained_steps",
-    "capture_note",
 )
 
 
@@ -67,7 +75,7 @@ def main() -> int:
 
     print(f"读到场景 {len(source_rows)} 个：")
     for r in source_rows:
-        print(f"  - {r.slug:22} {r.title[:28]:30} 高斯={r.splat_count} PSNR={r.psnr} 发布={r.published}")
+        print(f"  - {r.slug:22} {r.title[:26]:28} 点数={r.num_points} PSNR={r.psnr} 发布={r.published}")
 
     if args.dry_run:
         print("\n（--dry-run：未写入任何数据）")

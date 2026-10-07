@@ -100,7 +100,7 @@ export default function GuestbookPage() {
       <header className="page-head">
         <h1>留言板</h1>
         <p>
-          对某个场景的重建质量、页面交互有任何意见都可以留在这里；数据写进后端 SQLite，
+          对某个场景的重建质量、页面交互有任何意见都可以留在这里；数据写进后端数据库，
           同一访客 10 分钟最多 3 条（防刷）。
         </p>
       </header>
@@ -109,7 +109,7 @@ export default function GuestbookPage() {
         <p className="note" id="gb-offline">
           留言写入需要后端服务。本部署是<strong>静态演示版</strong>——下面展示的是随站点打包的
           <strong>离线快照</strong>，用于说明数据形态；后端实现见仓库
-          （FastAPI + SQLModel + SQLite，含限流与注入防护的测试，<code>backend/tests</code>）。
+          （FastAPI + SQLModel + PostgreSQL，含限流与注入防护的测试，<code>backend/tests</code>）。
         </p>
       ) : (
         <form className="gb-form" onSubmit={submit}>

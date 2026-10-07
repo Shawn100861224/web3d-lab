@@ -17,7 +17,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from .config import API_PREFIX, APP_NAME, APP_VERSION, CORS_ORIGINS, DB_PATH
+from .config import API_PREFIX, APP_NAME, APP_VERSION, CORS_ORIGINS, DB_LABEL
 from .db import init_db
 from .routers import events, guestbook, scenes
 
@@ -42,7 +42,7 @@ def health() -> dict:
         "status": "ok",
         "service": APP_NAME,
         "version": APP_VERSION,
-        "db": DB_PATH.name,
+        "db": DB_LABEL,
         "uptime_seconds": round(time.time() - STARTED_AT, 3),
     }
 
@@ -73,5 +73,19 @@ def create_app() -> FastAPI:
     service.include_router(events.router)
     service.include_router(guestbook.router)
     service.include_router(meta)
+
+    # —— 云端前缀兼容层 ——
+    # EdgeOne 云函数把 `/api/*` 交给入口文件时，是否剥掉 `/api` **行为不一致**：
+    # 实测同一项目里 `echo/[[default]].py` 会把 `/echo/abc` 变成 `/abc`（剥了），
+    # 而 `api/index.py` 收到的仍是 `/api/health`（没剥）。与其猜平台行为，
+    # 不如让应用两种都认：云端（API_PREFIX 非 /api）统一去掉最多一层 /api。
+    if API_PREFIX != "/api":
+
+        @service.middleware("http")
+        async def _normalize_platform_prefix(request, call_next):
+            path = request.scope.get("path", "")
+            if path.startswith("/api/"):
+                request.scope["path"] = path[4:]
+            return await call_next(request)
 
     return service

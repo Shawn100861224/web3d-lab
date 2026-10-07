@@ -85,7 +85,7 @@ export default function HomePage() {
         <p className="note" id="stats-offline">
           {mode === 'offline' ? (
             <>
-              访问统计与留言由后端服务记录（FastAPI + SQLModel + SQLite，36 项测试通过，代码见仓库）。
+              访问统计与留言由后端服务记录（FastAPI + SQLModel + PostgreSQL，36 项测试通过，代码见仓库）。
               本页是<strong>静态演示版</strong>，因此统计数据在这里不可用 —— 场景库与 3DGS 查看器完全正常。
             </>
           ) : (

@@ -1,8 +1,4 @@
-# EdgeOne 云函数依赖清单（平台优先读这里；其自动依赖检测只扫 cloud-functions/ 目录，
-# 而我们的包 web3d_app/ 在包外，所以 sqlmodel / psycopg2 必须手写）。
-# 版本按本地 backend/.venv 实测钉住，避免构建时漂移。
-fastapi==0.142.2
-sqlmodel==0.0.47
-pydantic==2.13.5
-SQLAlchemy==2.0.54
-psycopg2-binary>=2.9
+fastapi>=0.115
+sqlmodel>=0.0.22
+SQLAlchemy>=2.0
+pg8000>=1.30

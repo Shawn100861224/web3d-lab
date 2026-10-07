@@ -14,6 +14,18 @@ TEST_DIR.mkdir(parents=True, exist_ok=True)
 os.environ["WEB3D_DATA_DIR"] = str(TEST_DIR)
 os.environ["WEB3D_DB_PATH"] = str(TEST_DIR / "test.db")
 
+# ⚠️ 强制测试与生产库隔离（血泪教训）：
+# 外层 shell 里如果残留 DATABASE_URL（例如为了跑 pg_smoke.py 而 source 过 .env），
+# config 会优先用它 —— 于是 pytest 直接跑在**线上 Neon 库**上，而下面的清理夹具
+# 会清空各表。2026-10-07 实际发生了一次：场景元数据被清掉，只能重新灌。
+# 所以这里无条件摘掉 DATABASE_URL：pytest 永远只用测试临时 SQLite。
+_leaked_url = os.environ.pop("DATABASE_URL", None)
+if _leaked_url:
+    print(
+        "\n[conftest] 已忽略外层环境里的 DATABASE_URL"
+        f"（{_leaked_url.split('@')[-1].split('/')[0]}）—— 测试只用临时 SQLite，不会碰线上库\n"
+    )
+
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlmodel import Session, delete  # noqa: E402

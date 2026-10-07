@@ -7,7 +7,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent  # backend/
 DATA_DIR = Path(os.environ.get("WEB3D_DATA_DIR", BASE_DIR / "data"))
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    # 云函数文件系统是**只读**的（EdgeOne 实测：/var/user 只读，导入时建目录会直接
+    # OSError 让整个应用起不来，而平台对外只回 404）。只有本地 SQLite 才需要这个目录，
+    # 云端走 Postgres 用不到它，所以静默跳过。
+    pass
 
 DB_PATH = Path(os.environ.get("WEB3D_DB_PATH", DATA_DIR / "web3d.db"))
 
@@ -25,6 +31,18 @@ else:
     DATABASE_URL = f"sqlite:///{DB_PATH.as_posix()}"
 
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
+
+# pg8000 是纯 Python 驱动（云端构建机装不了编译型驱动，见 cloud-functions/requirements.txt）：
+# 它不认 sslmode 查询参数，SSL 要传 ssl_context（在 db.py 里加），所以这里先把查询串去掉。
+PG_USES_SSL_CONTEXT = "+pg8000" in DATABASE_URL
+if PG_USES_SSL_CONTEXT and "?" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.split("?")[0]
+
+# 给 /api/health 用的可读标识：云上别再显示 "web3d.db"（那会让人以为还在用 SQLite）
+if IS_SQLITE:
+    DB_LABEL = f"sqlite:{DB_PATH.name}"
+else:
+    DB_LABEL = "postgres:" + DATABASE_URL.split("@")[-1].split("/")[0].split("?")[0]
 
 # —— API 前缀：常规部署是 /api；EdgeOne 云函数会先把文件系统路由前缀（/api）剥掉
 # 再交给 FastAPI，所以云上设 WEB3D_API_PREFIX=""（空串）。
