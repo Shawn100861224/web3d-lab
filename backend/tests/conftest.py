@@ -19,8 +19,10 @@ from fastapi.testclient import TestClient  # noqa: E402
 from sqlmodel import Session, delete  # noqa: E402
 
 from app.db import engine, init_db  # noqa: E402
-from app.main import app  # noqa: E402
+from app.main import create_app  # noqa: E402
 from app.models import GuestbookEntry, PageView, Scene  # noqa: E402
+
+app = create_app()
 
 
 @pytest.fixture(autouse=True)

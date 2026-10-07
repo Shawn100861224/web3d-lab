@@ -45,3 +45,5 @@ work/
 .edgeone/*
 .tef_dist/*
   
+# 云函数部署包（构建产物，由 scripts/build-cloud-bundle.sh 生成）
+deploy/

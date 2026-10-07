@@ -16,10 +16,11 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from sqlmodel import Session, func, select
 
+from ..config import API_PREFIX
 from ..db import engine
 from ..models import GuestbookEntry, GuestbookIn, GuestbookList, GuestbookPublic
 
-router = APIRouter(prefix="/api/guestbook", tags=["guestbook"])
+router = APIRouter(prefix=f"{API_PREFIX}/guestbook", tags=["guestbook"])
 
 RATE_WINDOWS: tuple[tuple[int, int], ...] = ((10, 3), (60, 10))  # (分钟, 条数上限)
 

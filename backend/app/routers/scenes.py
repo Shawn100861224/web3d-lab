@@ -11,10 +11,11 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query, status
 from sqlmodel import Session, func, select
 
+from ..config import API_PREFIX
 from ..db import engine
 from ..models import Scene, SceneCreate, SceneList, ScenePublic, SceneUpdate
 
-router = APIRouter(prefix="/api/scenes", tags=["scenes"])
+router = APIRouter(prefix=f"{API_PREFIX}/scenes", tags=["scenes"])
 
 
 @router.get("", response_model=SceneList)

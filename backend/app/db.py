@@ -6,13 +6,24 @@ from collections.abc import Iterator
 
 from sqlmodel import Session, SQLModel, create_engine
 
-from .config import DATABASE_URL
+from .config import DATABASE_URL, IS_SQLITE
 
-engine = create_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args={"check_same_thread": False},
-)
+if IS_SQLITE:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
+else:
+    # 云函数是短生命周期实例：小连接池 + 用前探活（对 Neon 这类会休眠的库尤其重要）
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        pool_pre_ping=True,
+        pool_size=1,
+        max_overflow=2,
+        pool_recycle=300,
+    )
 
 
 def init_db() -> None:

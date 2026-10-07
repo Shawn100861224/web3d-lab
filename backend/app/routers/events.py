@@ -13,10 +13,11 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Query, Request, Response
 from sqlmodel import Session, func, select
 
+from ..config import API_PREFIX
 from ..db import engine
 from ..models import DailyStat, EventAck, EventIn, PageView, Scene, SceneStat, StatsOut
 
-router = APIRouter(prefix="/api", tags=["stats"])
+router = APIRouter(prefix=f"{API_PREFIX}", tags=["stats"])
 
 DEDUPE_WINDOW_SECONDS = 30
 DAILY_WINDOW_DAYS = 14

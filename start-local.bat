@@ -31,7 +31,7 @@ if not exist "%NPM%" (
 )
 
 echo [1/3] 启动后端 uvicorn :8000 ...
-powershell -NoProfile -Command "Start-Process -WindowStyle Minimized -FilePath '%PY%' -ArgumentList '-m','uvicorn','app.main:app','--host','127.0.0.1','--port','8000' -WorkingDirectory '%ROOT%\backend'"
+powershell -NoProfile -Command "Start-Process -WindowStyle Minimized -FilePath '%PY%' -ArgumentList '-m','uvicorn','asgi:app','--host','127.0.0.1','--port','8000' -WorkingDirectory '%ROOT%\backend'"
 >>"%LOG%" echo 后端启动退出码=%ERRORLEVEL%
 
 echo [2/3] 启动前端 vite :5173 ...
