@@ -204,7 +204,7 @@ export default function AboutPage() {
 
       <h3 className="sub-title">证据：留出视角的渲染 vs 真实照片</h3>
       <p className="note">
-        每张的左半是模型渲染、右半是同角度的真实照片。关键在于：这些视角**没有**参与训练（是留出评估集），
+        每张的左半是模型渲染、右半是同角度的真实照片。关键在于：这些视角没有参与训练（是留出评估集），
         所以看到的不是「模型背下了照片」，而是它真的学到了多少。
       </p>
       <div className="two-col">
