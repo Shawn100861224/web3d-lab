@@ -50,7 +50,7 @@
 
 ## 本地开发命令（模块 1 起可用）
 
-（运维类说明——启动脚本、本地/线上地址的区别——不写进本文件，见 `HANDOFF.md`。）
+（运维类说明——启动脚本、本地/线上地址的区别——不写进本文件；项目进度见 `PROGRESS.md`。）
 
 ```bash
 # 后端（端口 8000）
@@ -117,7 +117,7 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
   COLMAP 3.9.1（apt 版无 CUDA）/ **自拼的 CUDA 13.4 工具链**（`cuda-nvcc-13-4` + `libnvvm-13-4`，CUDA 13 把 nvvm 改名了）/
   gsplat 走 JIT 编译（缓存于 `~/.cache/torch_extensions`）。python 环境 `~/web3d/venv`，数据 `~/web3d/data/`。
 - **本机规格**：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB。
-  8GB 显存是本地训练的硬上限，所以满步数训练按需租云端 GPU（费用与方法见 `HANDOFF.md`）。
+  8GB 显存是本地训练的硬上限，所以满步数训练按需租云端 GPU。
 - **国内网络注意**（都踩过）：直连 `sparkjs.dev` 与 GitHub 大文件都很慢或不稳 → 走镜像或本地代理；
   反之 npmmirror / 清华 PyPI 源**要关代理**才快；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。
 

@@ -47,3 +47,6 @@ work/
   
 # 云函数部署包（构建产物，由 scripts/build-cloud-bundle.sh 生成）
 deploy/
+
+# 交接表不进公开仓库（内容含会话/运维细节；文件保留在本地）
+HANDOFF.md
