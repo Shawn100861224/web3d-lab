@@ -1,0 +1,66 @@
+name: CI
+
+# 每次推 main / 开 PR 都跑：后端测试 + 前端类型检查与构建。
+# 与 deploy-pages.yml 分工：那个负责**发布**，这个负责**别把坏的推上去**。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "cloud/**"
+      - "frontend/**"
+      - "pipeline/**"
+      - "scripts/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: 后端测试（pytest）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      # 依赖与云端函数保持一致：cloud/cloud-functions/requirements.txt 是唯一真相源
+      # （后端目录下没有单独的 requirements.txt 是有意的 —— 云端打包时只认这一份）
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r cloud/cloud-functions/requirements.txt
+          pip install pytest httpx
+
+      # backend/tests/conftest.py 会无条件摘掉 DATABASE_URL，测试只跑临时 SQLite，
+      # 永远不会碰到线上 Neon 库（这条防护是踩过事故后加的，别删）。
+      - name: 跑测试
+        working-directory: backend
+        run: python -m pytest -q
+
+  frontend-build:
+    name: 前端类型检查与构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 安装依赖
+        working-directory: frontend
+        run: npm ci
+
+      # package.json 的 build = `tsc -b && vite build` —— 类型错误会让 CI 变红
+      - name: 构建（含 tsc 类型检查）
+        working-directory: frontend
+        run: npm run build
