@@ -23,7 +23,9 @@ PATTERNS = {
 }
 
 SKIP_DIRS = {"node_modules", ".venv", ".git", "__pycache__", "dist", "assets"}
-SKIP_PATH_PARTS = ("deploy/cloud/assets", "work/", ".devloop")
+# 注意：这里按「路径前缀」判断，不能写成 "work/" —— 目录本身的 relpath 没有结尾斜杠，
+# 用带斜杠的串会漏掉直接放在该目录下的文件（第一版就漏了 work/shoe-cloud-metrics.json）。
+SKIP_PATH_PREFIXES = ("deploy/cloud/assets", "work", ".cache", ".devloop")
 EXTS = (".md", ".py", ".ts", ".tsx", ".json", ".yml", ".yaml", ".txt", ".sh", ".html", ".css")
 
 
@@ -33,7 +35,7 @@ def main() -> int:
     for cur, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
         rel_dir = os.path.relpath(cur, root).replace(os.sep, "/")
-        if any(p in rel_dir for p in SKIP_PATH_PARTS):
+        if any(rel_dir == p or rel_dir.startswith(p + "/") for p in SKIP_PATH_PREFIXES):
             continue
         for f in files:
             if not f.endswith(EXTS):
