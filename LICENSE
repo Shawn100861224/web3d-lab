@@ -19,12 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-注意：本许可证只覆盖**代码**。
-
-- **本人拍摄并训练的场景资产**（`frontend/public/demo/` 下的 `*.splat` 与其缩略图）
-  采用 **CC BY-NC 4.0**（署名—非商业性使用），与站点场景页里标注的一致。
-- **第三方示例资产**（`painted-bedroom` / `fireplace` / `valley` / `robot-head` 等官方示例）
-  版权归各自原作者（Spark / Forge / Mip-NeRF 360 等），本仓库仅作展示用途，不再分发许可。
