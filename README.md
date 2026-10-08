@@ -34,7 +34,7 @@
 
 ## 模块与验收标准
 
-状态由 `.devloop/state.json` 维护，`PROGRESS.md` 由脚本渲染 —— **不要手写 PROGRESS.md**。
+进度与待办见 `PROGRESS.md`。
 
 | # | 模块 | 验收方式 |
 |---|---|---|
@@ -99,15 +99,11 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 诊断脚本：`frontend/scripts/inspect_spz.mjs`（离线读点位）、`frontend/scripts/check_render.py`
 （对截图做像素级「非空画布」判定）。
 
-## 新会话怎么接手（重要）
+## 继续开发
 
-- **真相源是本文件 + `PROGRESS.md` 的自动区**（后者由 `devloop.py` 渲染，禁止手写）。
-  `HANDOFF.md` 是**另一条线**写的交接表（可能滞后），当参考读、不要当唯一依据。
-- **续跑**：读 `PROGRESS.md` 看「进行中/待办」，跑
-  `python <skills>/autonomous-ai-agents/autonomous-dev-loop/scripts/devloop.py check`
-  从下一个模块接着做；不要重新侦察已定的技术栈。
-- **恢复原对话**：桌面端左栏点这条会话，或 `hermes --resume <session_id>`。
-- **自主开发循环**默认开启：不停下等确认，但**拍摄照片、发布上线、花真钱、注册第三方账号**这四类必须停下来问本人。
+- **进度真相源**：本文件 + `PROGRESS.md`（进度与待办）。
+- **怎么接着做**：读 `PROGRESS.md` 的「进行中 / 待办」，从下一项继续；已经定下来的技术栈不要重新侦察。
+- **必须先问本人**：拍摄照片、发布上线、花真钱、注册第三方账号 —— 这四类不要自行决定。
 
 ## 环境快照（截至 2026-10-06）
 

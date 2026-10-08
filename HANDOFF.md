@@ -1,8 +1,7 @@
 # HANDOFF —— web3d-lab 交接表
 
-> 新会话开场**只读这一个文件 + `PROGRESS.md` 的自动区**，就够开工。
-> 不要 dump `state.db` 考古、不要 resume 老会话——代价写在第五节坑表里。
-> **最后更新：2026-10-07 凌晨（桌面端 profile 10086 那条线 ── 本轮=云端 30k 训练 + 上线）**
+> 新会话开场**只读这一个文件 + `PROGRESS.md`**，就够开工。
+> **最后更新：2026-10-08（本轮 = 裁切版资产上线 + 卡片呈现 + 手机端排版 + 公开文档脱敏）**
 
 ## 0z. 2026-10-07 凌晨：云端 30000 步训练跑完 + 上线（**看这节就先看这段**）
 
@@ -219,16 +218,17 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 本机 3GB WSL 内存跑长训练不稳 ✗）。
 
 
-| 时间 | 会话 | 干了什么 | 留下的产物 | 花费 |
-|---|---|---|---|---|
-| 10-02 10:11 | `@session:10086/20261002_101154_7f2d80`<br>「开发3DCV项目发现与安装网站」 | 做静态个人页（3D 方向 + 三维视觉开源项目雷达），装 4 个技能，部署上线 | **https://shawn100861224.github.io/bipedal-lab-3d/**<br>`C:\Users\Shawn\lab\web-3d` | $0.29 |
-| 10-04 12:04 | `@session:10086/20261004_120422_d40c7c`<br>「领取 DeepSeek 六元券」 | 领到 ¥6 赠金；桌面主模型切 native deepseek；装 5 个技能；**立项** | `D:\lab\web3d-lab` 立项 + README/PROGRESS/项目卡 | $0.51 |
-| 10-05 00:22 | `@session:10086/20261005_002207_3ee8fa`<br>「继续上次会话」 | **模块 1–9 全部推进**：前后端一体站点 + 训练管线 + 部署上线；含 8GB 机器的显存上限实测 | 见「二、现在到哪了」 | $1.26 |
-| 10-05 17:44 | `@session:10086/20261005_174447_80b63c`<br>「继续上次会话 #2」 | 内存升级评估 + **修好 10086 网关（此前该 profile 的 cron 全部静默失败）** + 建内存盯价任务（投递到微信）+ 查看器按场景配初始机位（机器人头正面）+ **README 约定：交接/待办类内容不进 README** | `price-watches/dram-16gb-ddr5-5600-sodimm.json`、提交 `a5139e7` | 待统计 |
-| 10-05 23:53 → 10-06 00:39 | `@session:10086/20261005_002207_3ee8fa`（同一长会话） | 用户本人实拍保温杯 43 张 → COLMAP → 训练 12000 步 → `bottle.splat`；场景 `bottle` 注册进后端 DB | `~/web3d/data/bottle/`、`frontend/public/demo/bottle.splat` | 待统计 |
-| 10-06 11:40 | 同上（续） | **实拍场景上线**为第 6 个场景（`bottle`，受限对照）；修正 DB 里未证实的「43/43 调优 SIFT」文案（改为只写实测事实）；实测**尺寸统一并不能救这批照片**（15/43 → 15/43）；两次调优 SIFT 实验都被 **WSL 虚拟机整机重启**静默杀掉（判据与缓解见技能 `web3d-lab`） | 提交 `ed318a8`、`ef74fcd`（HANDOFF+坑表）、`backend/scripts/payload-bottle.json`、技能 `web3d-lab` 更新 | 待统计 |
-| 10-06 12:40 → 14:05 | 同上（续） | **用户实拍第 2 个场景「运动鞋」全流程跑通并上线**（`shoe`，第 7 个场景）：数据线拉 53 张 12MP 原图 → Windows 侧降采样/亮度归一 → COLMAP **39/43 注册（90.7%）**、903/903 对匹配 → gsplat 15000 步 → 28,255 高斯 → 上线（资产 md5 校验一致）。期间排掉三类故障：WSL 整机重启、`prep_unify_size.py` 撑爆 VM、**WSL 单次分配 ~300MB 硬墙**（公式见技能）。**结论：本机自训画质到顶（自训全糊 vs 官方示例清晰），要好看得上云端 GPU** | 提交 `5e920cb`、`pipeline/prep_crop_roi.py`、`pipeline/03_train_gsplat.py`（新增 `--densify-grad`）、技能 `web3d-lab` 三条新坑 | 待统计 |
-| 10-07 00:20 → 02:00 | 本会话（桌面端 profile 10086，开场语「跑云端 30k 步训练并上线」，可用 `session_search` 关键词找回） | **云端 30000 步训练 ×3 组对照 + 上线**：租 AutoDL vGPU-32GB；训练器补 `--out-dir/--save-every/--min-opacity/--refine-stop/--holdout-mode ring`；修 gsplat 导出的二次 sigmoid；新增 4 个工具（`splat_roi_crop.py`/`splat2ply_slim.py`/`splat_x180.py`/`subject_crop_box.py`）；EdgeOne 改官方 CLI 部署（踩到一次 base 写错导致主站白屏并修回） | 提交 `ac90b06`、`backend/scripts/payload-shoe-cloud.json`、技能 `web3d-lab`+`cloud-gpu-training` 更新 | 云 GPU 约 ¥2 |
+| 时间 | 干了什么 | 留下的产物 |
+|---|---|---|
+| 10-02 | 做静态个人页（3D 方向 + 三维视觉开源项目雷达）并部署 | https://shawn100861224.github.io/bipedal-lab-3d/ |
+| 10-04 | 立项：本仓库 + README/PROGRESS/项目卡 | `D:\lab\web3d-lab` |
+| 10-05 | 模块 1–9 全部推进：前后端一体站点 + 训练管线 + 部署上线；含 8GB 机器的显存上限实测 | 见「二、现在到哪了」 |
+| 10-05 | 查看器按场景配初始机位（机器人头正面）；确立「交接/待办类内容不进 README」的约定 | 提交 `a5139e7` |
+| 10-05→06 | 实拍保温杯 43 张 → COLMAP → 训练 12000 步 → `bottle` 场景上线（受限对照） | `~/web3d/data/bottle/`、`frontend/public/demo/bottle.splat` |
+| 10-06 | 实拍运动鞋 53 张 → 43 张有效 → COLMAP **39/43 注册（90.7%）**、903/903 对匹配 → gsplat 15000 步 → 上线。期间排掉三类故障（WSL 整机重启、PIL 预处理撑爆 VM、WSL 单次分配硬墙） | 提交 `5e920cb`、`pipeline/prep_crop_roi.py`、`03_train_gsplat.py` 新增 `--densify-grad` |
+| 10-07 | **云端 30000 步训练 ×3 组对照 + 上线**：租云端 vGPU-32GB；训练器补 `--out-dir/--save-every/--min-opacity/--refine-stop/--holdout-mode ring`；修 gsplat 导出的二次 sigmoid；新增 4 个工具（`splat_roi_crop.py`/`splat2ply_slim.py`/`splat_x180.py`/`subject_crop_box.py`）；EdgeOne 改官方 CLI 部署 | 提交 `ac90b06`、`backend/scripts/payload-shoe-cloud.json` |
+| 10-07 | 剔掉 6 张糊片重训（37 张，留出视角 PSNR 14.44 → 15.41）+ 导出后裁掉糊背景并上线；三张鞋卡片各配真实缩略图、标题改为实验①②③ | 提交 `3e79932`、`e77b47d` |
+| 10-08 | 手机 390px 排版修正（导航/主按钮/操作行）；公开文档脱敏 | 提交 `54a5c53`、`cb9bca6`、`2f40f26` |
 
 ## 二、现在到哪了
 
@@ -247,27 +247,12 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 - 📄 《作品说明》一页 PDF：`docs/作品说明.pdf`（可随链接一起提交）
 - 场景库现有 **6 个已发布场景**：4 个 spark 官方示例 + 1 个自训合成场景（toy-capture）+ **1 个本人实拍（bottle，受限对照）**；房间级那个公开数据集场景因画质糊已转草稿（`published=false`，数据留着）
 
-## 三、费用与额度（2026-10-05 实测，权威数字）
-
-| 钱包 | 现状 |
-|---|---|
-| **DeepSeek 账户** | 累计消费 ≈ **¥80**（具体余额与充提明细不记入公开文档，实时数字看本地账单）|
-| **ofox 钱包** | 已用 **$6.82**（余额不记入公开文档）|
-| Hermes 两条线自身记账 | 92 会话 / 4,659 次调用 / **$7.98 ≈ ¥56.6**（ofox $4.48 · DeepSeek 直连 flash $1.45 · pro $1.20 · 微信线 v4-pro $0.82） |
-
-- 10-05 这一大轮（774 次调用、输出 48.4 万 tokens、含训练与十几轮失败重试）：**实付约 ¥6**（国庆假期闲时价 5 折）
-- **省钱三杠杆**：① 长会话走缓存命中（当天 3.45 亿命中 tokens，单价约为未命中的 1/50）→ 少开新会话、多读交接文档；② 闲时时段跑重活；③ 重活压 Codex/Harness（同一 DeepSeek 账户，额度共享）
-- 主模型当前 = native `deepseek`/`deepseek-flash`（走 `api.deepseek.com`，不需代理）；想回 ofox 就 `/model ofox`
-
-## 四、坑表（别再重复踩）
+## 三、坑表（别再重复踩）
 
 | 坑 | 已确认的结论 |
 |---|---|
 | 用 Electron 交付 | ❌ 否决：交付形态是**链接**；安装包手机打不开、对 3D 零增益 |
-| 从市场挑高星技能安装 | ✅ 已做过两轮（10-02 装 4 个、10-04 装 5 个）。再装先 `hermes skills list` 去重；每个安装 5–7 分钟（安全扫描主导） |
 | 直连 GitHub / sparkjs.dev 下大文件 | ❌ 卡死；走本地代理 `127.0.0.1:7897`（实测 100–740 KB/s）。反过来：npmmirror / 清华 PyPI / hf-mirror **要关代理**才快 |
-| 读老会话上下文 | 用 `session_search(session_id="…")` 一次读全文；禁止 dump 数据库 |
-| 桌面端一条会话聊到底 | 越聊越贵 → 换阶段就开新会话 + 读本文件 |
 | **WSL 里 GPU 能分配多少显存** | ⚠️ **远低于标称**：8GB 卡实测单进程只能分配 **约 1.5 GB**（干净进程 2.7 GB），且**与 Windows 可用内存强相关**（实测 700 MB ↔ 2.7 GB）。训练前先关浏览器/游戏平台。探测脚本：`pipeline/tests/probe_vram.py` |
 | **`PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`** | ❌ WSL 下**不能开**：走 CUDA VMM 接口，会在"还有 5.8 GB 空闲"时报 `memory mapping failed with OOM`，连 20 MB 都分配不了（PyTorch 报错信息里推荐的参数，照做反而故障） |
 | **房间级 3DGS 重建** | ❌ 本机做不到：参考实现要 **100–300 万高斯**，本机天花板约 6–10 万。**单物体/桌面级可行**（3–5 万高斯即可）→ 拍单个物体最合适 |
@@ -277,9 +262,6 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 | GitHub Pages 建站 | 工作流里的 `GITHUB_TOKEN` **无权创建 Pages 站点**（`Resource not accessible by integration`）→ 先用 `gh api -X POST repos/<o>/<r>/pages -f build_type=workflow` 建好 |
 | 静态托管的深链 | GitHub Pages 对未知路径返回 404（用 404.html 承载 SPA）→ 构建脚本会为每个已知路由生成**真实目录**，深链即可返回 200（`frontend/scripts/make_deep_link_dirs.py`） |
 | EdgeOne 的免费域名 | ⚠️ 它的 `*.edgeone.cool` **是带鉴权的预览链接**（不带 token 返回 401、3 小时过期）；公开访问需绑**自有域名**（官方文档明确） |
-| **某 profile 的 cron 一直不触发** | 根因：该 profile 的**网关起不来**。实测 10086 因与 default profile **共用同一套微信/QQ 凭据**、token 被占用而启动即退出（code 78）。修法：让不负责该平台的那一侧主动放弃 —— `hermes -p 10086 config set platforms.weixin.enabled false`（顶层 `platforms.<name>.enabled:false` **优先于 .env 凭据**，是官方开关），qqbot 同理。验证：`hermes cron status` 显示 "Gateway is running — cron jobs will fire" |
-| **桌面会话建的 cron 投递到哪** | `origin=null`（桌面/API 会话没有网关来源）→ `deliver=origin` 按设计**回退到 home channel**（本项目即微信）；若该平台已禁用则**投递失败但任务照跑**。桌面端**没有** `desktop/gui` 平台，也没有标题为 `Bot Chat` 的活跃会话时 `bot-chat` 不可用 → 要么用 `deliver=local`（桌面 Cron 面板可见，无推送），要么把任务放到持有微信凭据的 default profile |
-| **`hermes cron run <id>` 会被自身超时杀掉** | 它会阻塞到 tick；用 120s 超时跑就会把 owner 杀掉 → 执行记录变成 `unknown`（"whether side effects ran is unknown"）。要么给足超时，要么用 `background=true` 跑 |
 | **场景文案里出现无佐证的数字** | DB/站点文案里曾写着「43/43 注册（100%，调优 SIFT 后）」，但仓库里**没有任何日志或参数记录**能佐证 → 已改为只写实测事实。**往 UI 文案里写数字前，先有对应日志** |
 | 后台长任务把输出管给 `tail` | ❌ 管道缓冲 → 进程被 OOM 杀掉时日志只剩「卡在某一步」，错误全丢（本次调优 SIFT 就栽在这）。直接 `>> 日志 2>&1` + 每步打印退出码 |
 | WSL 里调优 SIFT 的内存红线 | `max_num_features 32768` + `estimate_affine_shape 1` + `domain_size_pooling 1` 在 7.9G 内存的 WSL 里被 **OOM 杀掉**（database.db 建了 0 字节、无报错、进程消失）。先用便宜三件套：`peak_threshold 0.004` + `SiftMatching.guided_matching 1` + 放宽 `Mapper.*min_num_inliers` |
@@ -290,12 +272,7 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 | **本机自训画质天花板** | 对照实测：**官方示例同一浏览器里清晰**，而自训的合成球/保温杯/运动鞋（输入质量很好：90.7% 注册、903/903 匹配）**全糊**。三版尝试（2.8 万整帧=雾 / 6.1 万整帧=卡死 / 6.1 万裁剪=放射伪影）都没能出可辨认物体。原因链：8GB 卡 → WSL 可用显存 ~1.3GB → 只能 down=8 → 高斯被单次分配墙压到几万。**要能看的自训场景直接上云端 GPU，别在本机耗时间** |
 | 裁到主体 | `pipeline/prep_crop_roi.py`（自动同步修 `cameras.txt` 的 cx/cy 与 W/H）。裁剪=移动主点，不改内参必糊 |
 
-## 五、技能清单（已装，无需再去找）
-
-- **本项目在用**：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`
-- **其他已有**：`3dgs-paper-reader`、`3dgs-method-compare`、`autonomous-dev-loop`（项目进度状态机）、`web3d-lab`（项目卡）、`skill-creator`、`git`、`best-minds`、`find-skills`、`github-repo-quickstart`、`web-deploy-github`
-
-## 六、本地运维（不进 README）
+## 四、本地运维
 
 | 事项 | 说明 |
 |---|---|
@@ -306,7 +283,7 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 | 线上打不开时 | 先试无痕窗口；再把本地代理客户端从"全局模式"改回"规则模式"（global 会让浏览器把 github.io 也走代理） |
 | 写 .bat 的坑 | 批处理里**中途 `chcp 65001` 会让 cmd 解析器读乱后续行、脚本静默不执行** → 把 .bat 存成 **GBK(cp936)+CRLF** 即可（中文 Windows 控制台默认码页就是它）。另外中文文件名经自动化调用会编码错乱，脚本因此用 ASCII 名 |
 
-## 六之二、内存升级与盯价（2026-10-05 新增）
+## 五、内存升级与价格（2026-10-05 新增）
 
 **实测（开机状态）**：总 **15.47 GB** / 空闲 **1.77 GB** / **占用 88.6%**；`C:\pagefile.sys` 峰值 1014 MB（上限 1024，接近打满）。
 内存条：**1 条** Micron 16GB DDR5-5600（`CT16G56C46S5.C8D`）@ `Controller0-ChannelB-DIMM0` → **单通道**；插槽 2 个、空 1 个、最大 64 GB。
@@ -321,11 +298,9 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 
 **免费缓解（今天就能做）**：关动态壁纸（`wallpaper64`，910 MB）+ 不用时关 Codex 桌面版（936 MB）≈ **回收 1.8 GB**，等于把当前空闲内存翻倍。
 
-**盯价任务**：建在 **default profile**（job `7ba1f71ce703`，每周一 09:00，`deliver=weixin:<home>` → 手机微信收）
-——放 default 是因为**只有它持有微信凭据**（见坑表「token 冲突」）。
-契约文件在 `profiles/10086/price-watches/dram-16gb-ddr5-5600-sodimm.json`（两 profile 共享文件系统）。
+**复核节奏**：价格每周复核一次，跌破出手线再动手（≤¥1,000 直接买）。
 
-## 七、下一步（按价值排序）
+## 六、下一步（按价值排序）
 
 1. **拍照片**（只有本人能做）：手机环拍**单个物体或桌面** 30–50 张（多角度、相邻重叠 60%+、光照均匀、别拍糊、表面有纹理最好）
    → 给我照片后跑 `pipeline/run_all.sh`，把线上那个「合成采集（链路验证场景）」换成实拍场景
