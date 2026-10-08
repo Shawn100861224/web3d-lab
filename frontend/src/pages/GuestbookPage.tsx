@@ -154,12 +154,12 @@ export default function GuestbookPage() {
             <span className="muted">{message.length}/600</span>
           </div>
           {error && (
-            <p className="note note--bad" id="gb-error">
+            <p className="note note--bad" id="gb-error" role="alert">
               {error}
             </p>
           )}
           {notice && (
-            <p className="note note--ok" id="gb-notice">
+            <p className="note note--ok" id="gb-notice" role="status" aria-live="polite">
               {notice}
             </p>
           )}

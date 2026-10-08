@@ -34,6 +34,10 @@ export default function App() {
 
   return (
     <div className="shell">
+      {/* 键盘用户 Tab 第一下即可跳到正文，不必逐个走过 6 个导航链接 */}
+      <a className="skip-link" href="#main">
+        跳到主内容
+      </a>
       <header className="nav">
         <NavLink to="/" className="brand">
           <span className="brand-mark">◈</span>
@@ -71,7 +75,7 @@ export default function App() {
         </span>
       </div>
 
-      <main className="content">
+      <main className="content" id="main" tabIndex={-1}>
         <Outlet />
       </main>
 

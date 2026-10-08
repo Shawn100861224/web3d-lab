@@ -25,7 +25,7 @@
   color: var(--fg);
   font-size: 13px;
 }
-.pj-search:focus {
+.pj-search:focus-visible {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
