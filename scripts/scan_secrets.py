@@ -2,7 +2,7 @@
 """scan_secrets.py —— 公开仓库里不该出现的内容扫描。
 
 用途：这个仓库是公开的（GitHub Pages 需要），所以「个人财务数字、代理/翻墙工具名、
-密钥、身份证/学号」这类东西不能进去。README/HANDOFF 会被评审直接看到。
+密钥、身份证/学号」这类东西不能进去。README 与站点会被评审直接看到。
 
 用法：python scripts/scan_secrets.py [仓库根目录]
 """
