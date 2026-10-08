@@ -33,7 +33,7 @@ export default function SceneCard({ scene }: Props) {
           </div>
           <div>
             <dt>PSNR</dt>
-            <dd>{scene.psnr != null ? scene.psnr.toFixed(2) : '待回写'}</dd>
+            <dd>{scene.psnr != null ? scene.psnr.toFixed(2) : '未测'}</dd>
           </div>
           <div>
             <dt>来源</dt>

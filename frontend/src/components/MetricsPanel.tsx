@@ -51,17 +51,17 @@ export default function MetricsPanel({ scene, live, fpsHistory = [] }: Props) {
           <Row
             label="PSNR"
             value={declared?.psnr != null ? declared.psnr.toFixed(2) : '—'}
-            hint={declared?.psnr == null ? '待回写' : 'dB'}
+            hint={declared?.psnr == null ? '未测' : 'dB'}
           />
           <Row
             label="SSIM"
             value={declared?.ssim != null ? declared.ssim.toFixed(4) : '—'}
-            hint={declared?.ssim == null ? '待回写' : undefined}
+            hint={declared?.ssim == null ? '未测' : undefined}
           />
           <Row
             label="LPIPS"
             value={declared?.lpips != null ? declared.lpips.toFixed(4) : '—'}
-            hint={declared?.lpips == null ? '待回写' : undefined}
+            hint={declared?.lpips == null ? '未测' : undefined}
           />
           <Row label="迭代步数" value={formatCount(declared?.iterations ?? null)} />
           <Row label="训练耗时" value={formatDuration(declared?.train_seconds ?? null)} />
