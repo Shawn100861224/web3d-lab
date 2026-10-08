@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './index.css'
+import './narrow.css' // 窄屏（≤640px）排版修正，必须排在 index.css 之后才覆盖得上
 import App from './App.tsx'
 import AboutPage from './pages/AboutPage.tsx'
 import GuestbookPage from './pages/GuestbookPage.tsx'

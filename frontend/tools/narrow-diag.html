@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>narrow-diag</title>
+    <style>
+      body { margin: 0; background: #111; color: #eee; font: 12px/1.5 ui-monospace, monospace; }
+      pre { margin: 0; padding: 10px; white-space: pre-wrap; }
+      iframe { border: 0; display: block; }
+    </style>
+  </head>
+  <body>
+    <!--
+      窄屏横向溢出诊断页（临时工具，本地用）：
+      把目标页面按 ?w= 指定宽度放进 iframe，测量 documentElement.scrollWidth 与视口宽度的差值，
+      并列出所有「右边界超出视口」的元素 —— 用来定位是谁把整页撑宽（表现为文字被切、需要左右滑）。
+      用法： /diag.html?u=/scenes&w=390 ，然后用 headless 浏览器的 --dump-dom 读 <pre> 的内容。
+    -->
+    <pre id="out">measuring…</pre>
+    <script>
+      const q = new URLSearchParams(location.search)
+      const url = q.get('u') || '/scenes'
+      const W = Number(q.get('w') || 390)
+      const f = document.createElement('iframe')
+      f.style.width = W + 'px'
+      f.style.height = (q.get('h') || 900) + 'px'
+      f.src = url
+      document.body.appendChild(f)
+      const done = (text) => {
+        document.getElementById('out').textContent = text
+        document.title = 'diag-done'
+      }
+      f.addEventListener('load', () => {
+        setTimeout(() => {
+          try {
+            const d = f.contentDocument
+            const sw = d.documentElement.scrollWidth
+            const lines = [`URL=${url}  W=${W}  iframeInner=${f.contentWindow.innerWidth}`, `scrollWidth=${sw}  overflow=${sw - W}`]
+            const hits = []
+            d.querySelectorAll('body *').forEach((el) => {
+              const r = el.getBoundingClientRect()
+              if (r.width > 0 && r.right > W + 1 && r.height > 0) {
+                const cls = (el.getAttribute('class') || '').split(/\s+/)[0]
+                hits.push(
+                  `${el.tagName.toLowerCase()}${cls ? '.' + cls : ''}  right=${Math.round(r.right)} w=${Math.round(r.width)}  "${(el.textContent || '').trim().slice(0, 26)}"`
+                )
+              }
+            })
+            lines.push('--- 右边界超出视口的元素（最多 25 个） ---')
+            lines.push(hits.slice(0, 25).join('\n') || '(无)')
+            done(lines.join('\n'))
+          } catch (e) {
+            done('测量失败：' + e)
+          }
+        }, 3500)
+      })
+    </script>
+  </body>
+</html>

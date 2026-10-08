@@ -1,0 +1,55 @@
+/*
+ * 窄屏（≤640px）排版修正
+ *
+ * 起因：用无头 Edge 按 390px 手机宽度实测线上页面，发现四处横向溢出 ——
+ *   ① 顶部导航 6 个链接放不下，后半段（开源项目/方法对比/关于我/留言板）被直接切掉，手机上点不到；
+ *   ② 首页三个主按钮横排，最后一个「3DGS 方法对比」被切掉；
+ *   ③ 场景详情页操作行（3DGS 标签 / 已被浏览 N 次 / 停止巡航）横排，按钮被切掉；
+ *   ④ 技术栈标签条本就有 flex-wrap，这里只做兜底。
+ *
+ * 共同原因：这些行都是「横排但缺少窄屏规则」——原 CSS 里只有 .nav 自己在 ≤640px 竖排了，
+ * 它内部的 <nav> 链接列表没有规则。
+ *
+ * 本文件只做 ≤640px 覆盖，不改桌面端任何表现。
+ */
+
+@media (max-width: 640px) {
+  /* ① 顶部导航：6 个链接在手机上放不下 → 直接换行（全部一眼可见，比"可滑动但看不见"更好） */
+  .nav nav {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    padding-bottom: 2px;
+  }
+
+  .nav nav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  /* ② 首页主按钮：竖排、整宽，避免最后一个被切掉 */
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .btn,
+  .hero-actions > a {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ③ 场景详情页操作行：允许换行 */
+  .topbar-actions {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* ④ 技术栈标签条：兜底换行（原本已有 flex-wrap，这里确保在小屏不被挤压） */
+  .techstrip {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+}

@@ -158,32 +158,6 @@
       "updated_at": "2026-10-07 10:51:54.646589+00:00"
     },
     {
-      "id": 29,
-      "slug": "shoe-clean",
-      "title": "运动鞋 ② 后处理版（① 的导出结果去浮动点）",
-      "summary": "「运动鞋」系列实验②（后处理）：与实验①是**同一次训练**的产物，唯一区别是导出后做了一遍后处理 —— 丢掉 alpha<0.2 的近乎全透明高斯、砍掉尺度超过 4×中位数的大团子、并把超大高斯压到 3×中位数、剔除离主体 p98.5 之外的孤立点。结果 66,904 → 49,352 个高斯（保留 74%），主体轮廓更清楚、周围杂质更少。**本版本没有 PSNR/SSIM**：指标是对实验①的原模型在留出视角上测的，这个后处理版本没有重新跑渲染评测，所以查看器里显示「未测」——不填假数字。",
-      "technique": "3DGS",
-      "source": "self-trained",
-      "num_points": 49352,
-      "sh_degree": null,
-      "iterations": null,
-      "train_seconds": null,
-      "gpu_mem_mb": null,
-      "capture_device": "手机（实拍）",
-      "capture_views": 43,
-      "psnr": null,
-      "ssim": null,
-      "lpips": null,
-      "asset_url": "/demo/shoe-clean.splat",
-      "asset_format": "splat",
-      "thumbnail_url": "/demo/shoe.jpg",
-      "license": "CC BY-NC 4.0",
-      "featured": false,
-      "published": true,
-      "created_at": "2026-10-07 15:33:04.861818+00:00",
-      "updated_at": "2026-10-08 05:19:08.442070+00:00"
-    },
-    {
       "id": 30,
       "slug": "shoe-37",
       "title": "运动鞋 ③ 重训版（剔 6 张糊片 + 裁糊背景）",
@@ -202,12 +176,38 @@
       "lpips": null,
       "asset_url": "/demo/shoe-37.splat",
       "asset_format": "splat",
-      "thumbnail_url": "/demo/shoe.jpg",
+      "thumbnail_url": "/demo/shoe-37.jpg",
       "license": "CC BY-NC 4.0",
       "featured": false,
       "published": true,
       "created_at": "2026-10-07 16:03:01.778695+00:00",
-      "updated_at": "2026-10-08 05:19:09.144993+00:00"
+      "updated_at": "2026-10-08 05:21:22.308046+00:00"
+    },
+    {
+      "id": 29,
+      "slug": "shoe-clean",
+      "title": "运动鞋 ② 后处理版（① 的导出结果去浮动点）",
+      "summary": "「运动鞋」系列实验②（后处理）：与实验①是**同一次训练**的产物，唯一区别是导出后做了一遍后处理 —— 丢掉 alpha<0.2 的近乎全透明高斯、砍掉尺度超过 4×中位数的大团子、并把超大高斯压到 3×中位数、剔除离主体 p98.5 之外的孤立点。结果 66,904 → 49,352 个高斯（保留 74%），主体轮廓更清楚、周围杂质更少。**本版本没有 PSNR/SSIM**：指标是对实验①的原模型在留出视角上测的，这个后处理版本没有重新跑渲染评测，所以查看器里显示「未测」——不填假数字。",
+      "technique": "3DGS",
+      "source": "self-trained",
+      "num_points": 49352,
+      "sh_degree": null,
+      "iterations": null,
+      "train_seconds": null,
+      "gpu_mem_mb": null,
+      "capture_device": "手机（实拍）",
+      "capture_views": 43,
+      "psnr": null,
+      "ssim": null,
+      "lpips": null,
+      "asset_url": "/demo/shoe-clean.splat",
+      "asset_format": "splat",
+      "thumbnail_url": "/demo/shoe-clean.jpg",
+      "license": "CC BY-NC 4.0",
+      "featured": false,
+      "published": true,
+      "created_at": "2026-10-07 15:33:04.861818+00:00",
+      "updated_at": "2026-10-08 05:21:21.288765+00:00"
     },
     {
       "id": 28,
@@ -233,7 +233,7 @@
       "featured": false,
       "published": true,
       "created_at": "2026-10-07 10:51:54.646589+00:00",
-      "updated_at": "2026-10-08 05:19:07.429430+00:00"
+      "updated_at": "2026-10-08 05:21:23.138593+00:00"
     }
   ],
   "note": "静态兜底数据：后端不可达时前端读取它；由 backend/scripts/export_static.py 生成"
