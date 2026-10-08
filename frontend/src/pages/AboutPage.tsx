@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import ProjectsPreview from '../components/ProjectsPreview'
-import { trackEvent } from '../lib/api'
+import { assetUrl, trackEvent } from '../lib/api'
 
 /**
  * /about —— 个人主页。内容由原静态考核页（lab/web-3d）的文案并入，
@@ -67,7 +67,7 @@ const DID: { when: string; tag: string; title: string; body: string }[] = [
     when: '2026 年 10 月 · 训练实验',
     tag: '做成了',
     title: '用两次重训把「糊能不能补救」这个问题用数据关掉',
-    body: '自训场景一直糊，我不想凭感觉归因，就做了两次对照实验。实验一（后处理）：写了个工具清掉导出资产里的浮动点与大团子（实测有 9% 的高斯几乎全透明，本质就是「雾」），结果画面确实更干净、轮廓能模糊看出，但细节没变多。实验二（剔除糊片重训）：先用拉普拉斯方差给 43 张照片算清晰度，挑出最糊的 6 张，把它们从 COLMAP 模型里同步剔除（只删图片文件不行 —— 训练器按 images.txt 枚举），同一套参数重训 3 万步，留出视角 PSNR 14.44 → 15.41 dB、SSIM 0.7333 → 0.7567；渲染对照图从「糊成一团」变成「一眼能认出是鞋、但纹理细节仍不足」。结论：两条路都有效但都只值一点点，真正的瓶颈是拍摄本身（单圈环绕、约 31 个有效视角）。这两个实验的最大价值不是让画面变好，而是把「要不要继续加算力」这个问题彻底关掉了 —— 下次该花的时间在拍照，不在调参。',
+    body: '自训场景一直糊，我不想凭感觉归因，就做了两次对照实验。实验一（后处理）：写了个工具清掉导出资产里的浮动点与大团子（实测有 9% 的高斯几乎全透明，本质就是「雾」），结果画面确实更干净、轮廓能模糊看出，但细节没变多。实验二（剔除糊片重训）：先用拉普拉斯方差给 43 张照片算清晰度，挑出最糊的 6 张，把它们从 COLMAP 模型里同步剔除（只删图片文件不行 —— 训练器按 images.txt 枚举），同一套参数重训 3 万步，留出视角 PSNR 14.44 → 15.41 dB、SSIM 0.7333 → 0.7567；⚠️ 需要说明的是：两版的留出视角不是同一批（剔掉 6 张后重新划分），所以两版的渲染图不能逐张对比 —— 能对比的是上面那两个平均指标。而把两张留出视角的渲染图摆出来看，两版肉眼都明显模糊，这正是「瓶颈在拍摄本身」的直接证据。结论：两条路都有效但都只值一点点，真正的瓶颈是拍摄本身（单圈环绕、约 31 个有效视角）。这两个实验的最大价值不是让画面变好，而是把「要不要继续加算力」这个问题彻底关掉了 —— 下次该花的时间在拍照，不在调参。',
   },
   {
     when: '2026 年 10 月 · 作品',
@@ -202,6 +202,38 @@ export default function AboutPage() {
         ))}
       </div>
 
+      <h3 className="sub-title">证据：留出视角的渲染 vs 真实照片</h3>
+      <p className="note">
+        每张的左半是模型渲染、右半是同角度的真实照片。关键在于：这些视角**没有**参与训练（是留出评估集），
+        所以看到的不是「模型背下了照片」，而是它真的学到了多少。
+      </p>
+      <div className="two-col">
+        <figure style={{ margin: 0 }}>
+          <img
+            src={assetUrl('/demo/compare-shoe-43.jpg')}
+            alt="用 43 张原图训练后的留出视角：左为模型渲染，右为同角度真实照片"
+            style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
+          />
+          <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
+            用 43 张原图训练（线上场景 shoe）：左=渲染，右=真实照片。留出视角平均 PSNR 14.44 dB / SSIM 0.7333。
+          </figcaption>
+        </figure>
+        <figure style={{ margin: 0 }}>
+          <img
+            src={assetUrl('/demo/compare-shoe-37.jpg')}
+            alt="剔除 6 张最糊照片后用 37 张重训的留出视角：左为模型渲染，右为同角度真实照片"
+            style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
+          />
+          <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
+            剔掉最糊的 6 张后用 37 张重训（线上场景 shoe-37）：同一套判据下 PSNR 15.41 dB / SSIM 0.7567。
+            ⚠️ 两版的留出视角不是同一批，所以两张图不能逐张对比，能对比的是这两个平均值。
+          </figcaption>
+        </figure>
+      </div>
+      <p className="note">
+        说句实话：两版都明显模糊。这不是参数没调好，而是拍摄条件决定的（单圈环绕、有效视角只有约 31 个）——
+        这正是我把「要不要继续加算力」这个问题关掉、转而准备重拍的原因。
+      </p>
       <h2 className="section-title">03 / 小尝试，包括失败的那几条</h2>
       <div className="two-col">
         <div className="card">
