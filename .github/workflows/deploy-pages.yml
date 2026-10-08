@@ -36,9 +36,11 @@ jobs:
         run: npm ci
 
       # 仓库名即子路径：/web3d-lab/
+      # 第三个参数是站点根地址 —— 每个场景深链据此写自己的分享卡片（og:image 必须绝对地址）。
+      # 从仓库信息推导，别写死，换仓库/换账号时不会错。
       - name: Build (static mode)
         working-directory: frontend
-        run: bash scripts/build-for-pages.sh "/${GITHUB_REPOSITORY#*/}/"
+        run: bash scripts/build-for-pages.sh "/${GITHUB_REPOSITORY#*/}/" "" "https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}"
 
       # Pages 站点已用 gh api 创建（build_type=workflow）：workflow 里的 GITHUB_TOKEN
       # 没有创建站点的权限（会报 Resource not accessible by integration），所以不在这里 enable。

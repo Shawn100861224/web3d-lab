@@ -16,6 +16,15 @@ echo "API_BASE=${API:-（空：纯静态模式，前端自动退回 scenes-fallb
 VITE_BASE=/ VITE_API_BASE="$API" ./node_modules/.bin/vite build --outDir dist-edgeone
 
 rm -f dist-edgeone/404.html   # 明确不放
+
+# 深链目录 + 每个场景自己的分享卡片。
+# 注意：EdgeOne 靠平台 SPA 兜底也能让 /scenes/x/ 返回 200，但**兜底返回的是站点 index.html**
+# → 分享卡片永远不区分场景。所以要显式生成真实目录（真实文件优先于兜底）。
+# ubuntu 上只有 python3、Windows 上 python 才是真的，两个都试。
+PY_BIN="$(command -v python || command -v python3)"
+if ! "$PY_BIN" -c "pass" >/dev/null 2>&1; then PY_BIN="$(command -v python3)"; fi
+"$PY_BIN" scripts/make_deep_link_dirs.py dist-edgeone --origin "https://www.shawnlab.cn"
+
 echo "--- 产物 ---"
 ls dist-edgeone
 [ -f dist-edgeone/scenes-fallback.json ] && echo "✅ 兜底数据已打包" || echo "⚠️ 缺兜底数据"

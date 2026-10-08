@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 # 构建「静态托管」版本（GitHub Pages / EdgeOne Pages 都能用）。
 #
-#   bash scripts/build-for-pages.sh [base路径] [后端地址]
+#   bash scripts/build-for-pages.sh [base路径] [后端地址] [站点根地址]
 # 例：
 #   bash scripts/build-for-pages.sh /web3d-lab/                       # 纯前端（无后端，走静态兜底）
 #   bash scripts/build-for-pages.sh /web3d-lab/ https://api.xxx.com   # 前端 + 远端后端
+#   bash scripts/build-for-pages.sh /web3d-lab/ "" https://shawn100861224.github.io/web3d-lab
+#     ↑ 第三个参数是「站点根地址」，用来给每个场景深链写自己的分享卡片（og:image 必须绝对地址）。
+#       不传时默认按本仓库的 GitHub Pages 地址，本地/其他部署请显式传。
 #
 # 三件必须做的事：
 #   1. base 设成子路径，否则 GH Pages 上 JS/CSS 全 404；
@@ -16,6 +19,8 @@ cd "$(dirname "$0")/.."
 
 BASE="${1:-/}"
 API="${2:-}"
+# 站点根地址：给每个场景深链写自己的分享卡片（og:image 要绝对地址，爬虫不解析相对路径）
+ORIGIN="${3:-https://shawn100861224.github.io/web3d-lab}"
 
 echo "base=$BASE  API_BASE=${API:-（空：纯静态模式，前端会自动退回 scenes-fallback.json）}"
 VITE_BASE="$BASE" VITE_API_BASE="$API" npm run build
@@ -35,7 +40,7 @@ done
 # Ubuntu CI 上反过来（只有 python3）。所以先找 python，能用再退回 python3。
 PY_BIN="$(command -v python || command -v python3)"
 if ! "$PY_BIN" -c "pass" >/dev/null 2>&1; then PY_BIN="$(command -v python3)"; fi
-"$PY_BIN" scripts/make_deep_link_dirs.py dist
+"$PY_BIN" scripts/make_deep_link_dirs.py dist --origin "$ORIGIN"
 
 # 确认兜底数据真的进了产物（没有它，纯静态模式下场景库会是空的）
 if [ -f dist/scenes-fallback.json ]; then
