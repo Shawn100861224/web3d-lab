@@ -4,7 +4,7 @@
 # 为什么需要它：示例资产来自 sparkjs.dev 的公开示例仓库（examples/assets.json），
 # 体积 1–10MB，不进 git 也不便于手传；这份脚本是可复现的来源说明。
 #
-# 注意（本机实测 2026-10-05）：sparkjs.dev 直连速度为 0，必须走 Clash 代理；
+# 注意（本机实测 2026-10-05）：sparkjs.dev 直连速度为 0，必须走本地代理；
 # 而 npmmirror/GitHub 那类国内可达的源反过来要关代理。所以这里显式只给这一条
 # 命令加代理，不污染全局环境。
 set -euo pipefail

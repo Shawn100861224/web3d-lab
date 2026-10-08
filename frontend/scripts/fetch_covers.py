@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RADAR = ROOT / "frontend" / "public" / "radar.json"
 COVERS = ROOT / "frontend" / "public" / "covers"
-PROXY = "http://127.0.0.1:7897"  # Clash；直连 GitHub 会被限速到百 KB/s
+PROXY = "http://127.0.0.1:7897"  # 本地代理；直连 GitHub 会被限速到百 KB/s
 MIN_BYTES = 5000  # 小于这个值说明是错误页/占位，不算成功
 
 

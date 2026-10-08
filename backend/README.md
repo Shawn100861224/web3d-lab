@@ -29,4 +29,4 @@ uv pip install --python .venv/Scripts/python.exe --native-tls \
   fastapi "uvicorn[standard]" sqlmodel httpx pytest
 ```
 
-> 本机必须 `--native-tls` + 国内镜像，否则 uv 的 TLS 握手会失败（Clash 代理变量在场）。
+> 本机必须 `--native-tls` + 国内镜像，否则 uv 的 TLS 握手会失败（本机代理环境变量在场）。

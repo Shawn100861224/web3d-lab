@@ -73,7 +73,7 @@ cd D:/lab/web3d-lab/frontend && npm run dev
 目录里有 **5 个可渲染资产**：4 个示例 `.spz`（约 19 MB，来自 spark 官方示例清单 `sparkjs.dev`
 的 `examples/assets.json`）+ 1 个**自训导出**的 `.splat`（1.0 MB，见最后一行）。
 示例资产用于「先把链路跑通」；真实照片到位后会用实拍场景替换掉最显眼的位置。
-重新拉取用 `frontend/scripts/fetch-demo-assets.sh`（**必须走 Clash 代理**，直连 sparkjs.dev 速度为 0）。
+重新拉取用 `frontend/scripts/fetch-demo-assets.sh`（**直连 sparkjs.dev 速度为 0，要走本地代理**）。
 
 | 文件 | 点数 | 包围盒（世界单位） | 实测 |
 |---|---|---|---|
@@ -109,10 +109,10 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 - **恢复原对话**：桌面端左栏点这条会话，或 `hermes --resume <session_id>`。
 - **自主开发循环**默认开启：不停下等确认，但**拍摄照片、发布上线、花真钱、注册第三方账号**这四类必须停下来问本人。
 
-## 环境快照（截至 2026-10-05）
+## 环境快照（截至 2026-10-06）
 
-- **部署（2026-10-06 更新）**：公开主入口 → **`https://www.shawnlab.cn`** ✓
-  （自有域名，已配 HTTPS 证书 · 加速区域选「全球可用区（不含中国大陆）」故**免备案** ·
+- **部署**：公开主入口 → **`https://www.shawnlab.cn`** ✓
+  （自有域名 + HTTPS 证书 · 加速区域选「全球可用区（不含中国大陆）」故**免备案** ·
   电脑与手机流量均实测可访问 ✓）
   GitHub Pages 作为镜像：`https://shawn100861224.github.io/web3d-lab/`
   （国内部分网络下不稳 ✗ —— 同一台电脑能开、手机流量白屏 —— 所以改为自有域名为主入口 ✓）
@@ -120,10 +120,7 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
 - **训练环境**（WSL2 Ubuntu-24.04，详见 `pipeline/README.md`）：torch 2.14.1+cu130 / RTX 5060 Laptop（sm_120）/
   COLMAP 3.9.1（apt 版无 CUDA）/ **自拼的 CUDA 13.4 工具链**（`cuda-nvcc-13-4` + `libnvvm-13-4`，CUDA 13 把 nvvm 改名了）/
   gsplat 走 JIT 编译（缓存于 `~/.cache/torch_extensions`）。python 环境 `~/web3d/venv`，数据 `~/web3d/data/`。
-- 已装技能（见 `hermes skills list`）：`ui-ux-pro-max`、`ui-styling`、`fastapi`、`playwright`、`3d-orbit-inspect-demo`。
-- Hermes(profile 10086) 主模型 = native `deepseek`/`deepseek-flash`（走 `api.deepseek.com`，不需代理），别名 `ofox` 可回切。
-  **¥6 赠金已于 2026-10-05 全部用尽**（6.00 → 0.00，在 10/6 21:00 过期前烧完），账户余额 ¥26.23。
-  费用细节与省钱杠杆见 `HANDOFF.md` 第三节。
-- 本机：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB。
-- 网络要点（都踩过）：直连 `sparkjs.dev` 速度 0 → 必须走 Clash 代理；GitHub 直连慢（推 20MB 约 2 分钟）；
-  npmmirror / 清华 PyPI 源反过来**要关代理**；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。
+- **本机规格**：RTX 5060 Laptop 8GB / 16GB DDR5 / D 盘余 ~600GB。
+  8GB 显存是本地训练的硬上限，所以满步数训练按需租云端 GPU（费用与方法见 `HANDOFF.md`）。
+- **国内网络注意**（都踩过）：直连 `sparkjs.dev` 与 GitHub 大文件都很慢或不稳 → 走镜像或本地代理；
+  反之 npmmirror / 清华 PyPI 源**要关代理**才快；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。

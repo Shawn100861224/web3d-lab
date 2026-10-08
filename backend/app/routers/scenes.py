@@ -75,8 +75,8 @@ def update_scene(slug: str, payload: SceneUpdate) -> ScenePublic:
 @router.post("", response_model=ScenePublic, status_code=status.HTTP_201_CREATED)
 def create_scene(payload: SceneCreate) -> ScenePublic:
     with Session(engine) as session:
-        clash = session.exec(select(Scene).where(Scene.slug == payload.slug)).first()
-        if clash is not None:
+        existing = session.exec(select(Scene).where(Scene.slug == payload.slug)).first()
+        if existing is not None:
             raise HTTPException(status_code=409, detail=f"slug '{payload.slug}' already exists")
         row = Scene.model_validate(payload)
         session.add(row)
