@@ -1,5 +1,10 @@
 # web3d-lab —— 3DGS 在线重建查看器 + 个人主页
 
+[![CI](https://github.com/Shawn100861224/web3d-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/Shawn100861224/web3d-lab/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Live](https://img.shields.io/badge/live-www.shawnlab.cn-brightgreen.svg)](https://www.shawnlab.cn/)
+[![Pages](https://github.com/Shawn100861224/web3d-lab/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/Shawn100861224/web3d-lab/actions/workflows/deploy-pages.yml)
+
 **在线预览**：[www.shawnlab.cn](https://www.shawnlab.cn/)（主站 · 后端在线：留言板可写、访问统计实时）
 　·　[GitHub Pages 镜像](https://shawn100861224.github.io/web3d-lab/)（纯静态备用，场景照常渲染）
 
