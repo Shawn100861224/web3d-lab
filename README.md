@@ -120,3 +120,9 @@ snow-street      sh=2  fractionalBits=6    ← 空盒、画面全黑
   8GB 显存是本地训练的硬上限，所以满步数训练按需租云端 GPU（费用与方法见 `HANDOFF.md`）。
 - **国内网络注意**（都踩过）：直连 `sparkjs.dev` 与 GitHub 大文件都很慢或不稳 → 走镜像或本地代理；
   反之 npmmirror / 清华 PyPI 源**要关代理**才快；`wsl.exe` 内联命令里别用 shell 变量（会被外层吞掉，写脚本文件）。
+
+## 许可
+
+- **代码**：[MIT](LICENSE)。
+- **本人拍摄并训练的场景资产**（`frontend/public/demo/` 下的 `*.splat` 与缩略图）：**CC BY-NC 4.0**，与场景页里的标注一致。
+- **第三方官方示例资产**（`painted-bedroom` / `fireplace` / `valley` / `robot-head`）：版权归各自原作者，仅作展示。
