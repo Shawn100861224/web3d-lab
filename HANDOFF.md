@@ -308,7 +308,7 @@ gsplat 的断言按「打包模式」校验（`image_dims + (channels,)`），�
 |---|---|---|
 | 1 | 每个场景深链生成自己的分享卡片 | ✅ 完成（提交 `900f592`；主站 + 镜像都验过，两场景卡片各不相同）|
 | 2 | 仓库加许可证 | ✅ 完成（提交 `86728c4`/`06e5721`；`gh api` 已识别 `MIT`）|
-| 3 | GitHub 自定义 social preview | ⬜ **需本人在网页上传 `og-cover.jpg`**（Settings → Social preview）|
+| 3 | GitHub 自定义 social preview | 🟡 **以页面为准**（截图里显示已上传的卡片 +「编辑」按钮）；⚠️ 别用 API 判断 —— `has_custom_social_preview` **不是** REST 字段，jq 对不存在的键返回 `null`，会被误读成「未设置」|
 | 4 | 加跑测试的 CI | ✅ 完成（提交 `25f3bf0`；两个 job 27 秒跑绿）|
 | 5 | 站点健康监控 | ✅ 完成（`scripts/health_check.sh` + 定时任务 `8a9798a35b1a`，每日 09:30，正常静默）|
 | 6 | 下载备份云端训练产物 `ckpt_30000.ply`（22.66MB，还在 AutoDL 实例上） | ⬜ 下次开云主机时（实例被回收就没了）|
