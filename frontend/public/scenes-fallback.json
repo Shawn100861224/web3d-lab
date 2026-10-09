@@ -234,6 +234,32 @@
       "published": true,
       "created_at": "2026-10-07 10:51:54.646589+00:00",
       "updated_at": "2026-10-08 05:21:23.138593+00:00"
+    },
+    {
+      "id": 31,
+      "slug": "box",
+      "title": "手柄包装盒（60 视角实拍 · 云端 3 万步）",
+      "summary": "「实拍第六件」手柄包装盒：60 张手机实拍（主摄 1x、锁 AE/AF、1920×1440）环拍一整圈 → COLMAP 注册 60/60（100%，15,808 稀疏点、平均重投影误差 0.70 px）→ 云端 vGPU-32GB 用 gsplat 训练 30000 步、全分辨率 1920×1440、留出 8 个视角按方位角均匀分布。训练产出 55,841 高斯 → 导出按不透明度 ≥0.03 裁到 51,285 → 空间裁切（保留离主体中心 1.0、1.0–1.7 渐隐）后线上资产 45,719 高斯。留出视角 PSNR 17.23 dB / SSIM 0.8506，训练 581 s、显存峰值 785 MB。如实说明：边缘偏软、盒面印刷的手柄图案可辨但文字不可读；注册率 100% 是本系列最高（上一双鞋 90.7%），残留模糊来自视角数量与拍摄距离，不是算力。",
+      "technique": "3DGS",
+      "source": "self-capture",
+      "num_points": 55841,
+      "sh_degree": 3,
+      "iterations": 30000,
+      "train_seconds": 581,
+      "gpu_mem_mb": 785,
+      "capture_device": "手机（实拍）",
+      "capture_views": 60,
+      "psnr": 17.229,
+      "ssim": 0.8506,
+      "lpips": null,
+      "asset_url": "/demo/box.splat",
+      "asset_format": "splat",
+      "thumbnail_url": "/demo/box.jpg",
+      "license": "自有照片（本人拍摄）",
+      "featured": false,
+      "published": true,
+      "created_at": "2026-10-09 04:39:51.323739+00:00",
+      "updated_at": "2026-10-09 04:39:51.323747+00:00"
     }
   ],
   "note": "静态兜底数据：后端不可达时前端读取它；由 backend/scripts/export_static.py 生成"
