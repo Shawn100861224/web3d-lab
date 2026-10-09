@@ -72,7 +72,7 @@ export default function MetricsPanel({ scene, live, fpsHistory = [] }: Props) {
           <Row
             label="高斯点数"
             value={formatCount(declared?.num_points ?? null)}
-            hint={declared?.num_points == null ? undefined : '训练产出'}
+            hint={declared?.num_points == null ? undefined : '资产内'}
           />
           <Row label="球谐阶数" value={declared?.sh_degree != null ? `SH${declared.sh_degree}` : '—'} />
           <Row label="采集设备" value={declared?.capture_device ?? '—'} />
