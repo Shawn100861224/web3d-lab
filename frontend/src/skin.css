@@ -489,6 +489,29 @@ a:hover { color: var(--accent); }
   .hero h1 .w, .hero::after { opacity: 1 !important; }
 }
 
+/* ── 窄屏：对比表本身宽 1080px，靠 .table-wrap 内部横向滚动 ────────────────
+   实测：390px 下整页 scrollWidth=390、overflow=0（表格没有撑宽页面），
+   但「可以横向滑」这件事手机上没有任何提示 —— 给一个贴在左侧的常驻小标签
+   （position: sticky 让它始终可见，不会随表格滑走）。 */
+@media (max-width: 700px) {
+  .table-wrap::after {
+    content: "↔ 表格可左右滑动";
+    position: sticky;
+    left: 0;
+    display: block;
+    width: max-content;
+    margin: 8px 0 8px 8px;
+    padding: 3px 9px;
+    border: 1px solid var(--accent-line);
+    border-radius: 999px;
+    background: rgba(34, 211, 238, 0.10);
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+}
+
 /* ── 窄屏（<820px）：关掉装饰性元素，保证排版不被挤坏 ───────────────── */
 @media (max-width: 820px) {
   .hero-cube { display: none; }

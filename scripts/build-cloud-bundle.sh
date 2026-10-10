@@ -13,6 +13,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/deploy/cloud"
 
+# 前置自检：前端产物必须是完整的。坑（踩过一次）：dist-edgeone 是空壳时，
+# 整个部署包里没有 index.html，平台对外回 **404**（不是 500），整站直接打不开。
+if [ ! -f "$ROOT/frontend/dist-edgeone/index.html" ]; then
+  echo "❌ 找不到 $ROOT/frontend/dist-edgeone/index.html" >&2
+  echo "   先跑： cd frontend && bash scripts/build-for-edgeone.sh" >&2
+  exit 1
+fi
+N_ASSETS="$(ls -A "$ROOT/frontend/dist-edgeone/assets" 2>/dev/null | wc -l)"
+if [ "$N_ASSETS" -lt 2 ]; then
+  echo "❌ frontend/dist-edgeone/assets 只有 $N_ASSETS 个条目，像是空壳构建" >&2
+  exit 1
+fi
+
 rm -rf "$OUT"
 mkdir -p "$OUT"
 
