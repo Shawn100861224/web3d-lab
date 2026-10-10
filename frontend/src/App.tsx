@@ -42,7 +42,7 @@ export default function App() {
   useEffect(() => {
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
 
-    const SPOT = '.card-scene, .feature, .stats-card, .tile-spot, .panel-block'
+    const SPOT = '.card-scene, .feature, .stats-card, .tile-spot, .panel-block, .pj-card, .gb-row'
     let current: HTMLElement | null = null
     let rect: DOMRect | null = null
 
