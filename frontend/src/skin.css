@@ -14,7 +14,28 @@
      Bento Grid / Card Spotlight / Hover Border Gradient
    ========================================================================== */
 
+/* ==========================================================================
+   自托管等宽字体（2026-10-11）
+   —— 为什么自己做子集而不是用 Google Fonts / 系统字体栈：
+      * 系统栈 `ui-monospace, SFMono-Regular, Consolas, monospace` 在 Windows/Mac/安卓 上是三个不同字体
+        → 指标面板、HUD、对比表、技术条的字宽与字高随设备变，评审用 Mac/手机看到的和你截图不是一回事；
+      * Google Fonts 在国内不通、还会多一个第三方请求；
+      * 子集只含拉丁/数字 + 站里真正用到的符号（→ ← ↔ ↑ ↓ ● ◆ ≤ ≥ ≈ ± × ÷ ° · … — μ Δ π €），
+        **不含中文**（中文继续走系统字体，否则文件会涨到几百 KB）；20.9 KB，可变字重 100–800（一个文件覆盖常规+粗体）。
+      * 源：JetBrains Mono（OFL-1.1）；用 fontTools 从官方可变字体子集化，未含代码连字（calt 已剔除，
+        避免 `->` `!=` 这类被连字改写）。授权见 frontend/src/assets/fonts/LICENSE.txt
+   ========================================================================== */
+@font-face {
+  font-family: "JetBrains Mono Web";
+  src: url("./assets/fonts/jetbrains-mono-web.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  /* 自托管等宽字体优先；后面几个是兜底（缺字形时按字符回退） */
+  --mono: "JetBrains Mono Web", ui-monospace, SFMono-Regular, Consolas, monospace;
   /* —— 底色：碳黑（比原来的 #101520 更黑，强调色才浮得出来）—— */
   --bg: #08090c;
   --bg-2: #0b0e14;
