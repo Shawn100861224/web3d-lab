@@ -144,6 +144,7 @@ def main() -> int:
 
     # ---- 项目详情深链：/projects/<owner>/<name>/（数据来自 radar.json）----
     projects = 0
+    project_paths: list[tuple[str, str]] = []
     radar = root / "radar.json"
     if radar.exists():
         try:
@@ -155,7 +156,21 @@ def main() -> int:
             d = root / "projects" / it["owner"] / it["name"]
             d.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(index, d / "index.html")
+            project_paths.append((it["owner"], it["name"]))
             projects += 1
+
+    # ---- sitemap.xml：给爬虫一份完整入口清单（只在给了 --origin 时写 —— 里面必须是绝对地址）----
+    if args.origin:
+        base = args.origin.rstrip("/")
+        locs = [f"{base}/"] + [f"{base}/{r}/" for r in TOP_ROUTES]
+        locs += [f"{base}/scenes/{it['slug']}/" for it in scenes]
+        locs += [f"{base}/projects/{o}/{n}/" for o, n in project_paths]
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        xml += [f"  <url><loc>{u}</loc></url>" for u in locs]
+        xml.append("</urlset>")
+        (root / "sitemap.xml").write_text("\n".join(xml) + "\n", encoding="utf-8")
+        print(f"已写 sitemap.xml（{len(locs)} 条：首页 + {len(TOP_ROUTES)} 路由 + {len(scenes)} 场景 + {len(project_paths)} 项目）")
 
     card_note = f"，其中 {per_scene} 个场景写了自己的分享卡片" if args.origin else "（未给 --origin，分享卡片仍是站点级）"
     print(

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# 主入口（自有域名 · EdgeOne 全球可用区）
+Sitemap: https://www.shawnlab.cn/sitemap.xml
+
+# GitHub Pages 镜像
+Sitemap: https://shawn100861224.github.io/web3d-lab/sitemap.xml

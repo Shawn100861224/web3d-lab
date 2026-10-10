@@ -141,6 +141,10 @@ export default function AboutPage() {
         </p>
         <p className="lede">
           联系方式：<a href="mailto:18711505157@163.com">18711505157@163.com</a>
+          {' · '}
+          <a href={assetUrl('/docs/project-statement.pdf')} download="web3d-lab-作品说明.pdf">
+            下载《作品说明》PDF（2 页，技术细节与验收证据都在里面）
+          </a>
         </p>
       </header>
 
@@ -207,6 +211,20 @@ export default function AboutPage() {
         每张的左半是模型渲染、右半是同角度的真实照片。关键在于：这些视角没有参与训练（是留出评估集），
         所以看到的不是「模型背下了照片」，而是它真的学到了多少。
       </p>
+      <div className="two-col">
+        <figure style={{ margin: 0 }}>
+          <img
+            src={assetUrl('/demo/compare-box-60.jpg')}
+            alt="手柄包装盒 60 张实拍训练后的留出视角：左为模型渲染，右为同角度真实照片"
+            style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
+          />
+          <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
+            <b>目前指标最好的一批（线上场景 box）</b>：60 张手机实拍、COLMAP <b>60/60 全注册</b>（重投影误差 0.70 px），
+            留出视角 <b>PSNR 17.23 dB / SSIM 0.8506</b>。左=渲染，右=同角度真实照片 —— 仍然偏软，
+            原因在拍摄（单圈视角数量），不在算力。
+          </figcaption>
+        </figure>
+      </div>
       <div className="two-col">
         <figure style={{ margin: 0 }}>
           <img
