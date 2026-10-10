@@ -28,6 +28,14 @@ type Props = {
   /** 自动巡航的角速度（弧度/秒），0 表示关闭 */
   rotateSpeed?: number
   /**
+   * 拖拽旋转的灵敏度（OrbitControls.rotateSpeed）。
+   *
+   * 为什么单独一个参数：留出「巡航速度」和「手感」两件事 —— 巡航慢一点好看，
+   * 拖拽慢一点好控。默认 0.35 是按留言板反馈调的（原值 0.6 太快，
+   * 在手机上尤其容易「一滑就转过头」）；桌面上想快点可以按场景调高。
+   */
+  dragRotateSpeed?: number
+  /**
    * 初始机位的方位角（度，绕 Y 轴）。0 = 从 +Z 看；180 = 从 -Z 看。
    *
    * 为什么需要：自动取景只能按包围盒算「离多远」，算不出「哪一面是正面」。
@@ -56,7 +64,8 @@ type Props = {
 export default function SplatViewer({
   url,
   autoRotate = false,
-  rotateSpeed = 0.6,
+  rotateSpeed = 0.45,
+  dragRotateSpeed = 0.35,
   initialAzimuthDeg = 0,
   initialElevationDeg = 12,
   onStats,
@@ -99,7 +108,7 @@ export default function SplatViewer({
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearColor(0x101520, 0)  // 主题 C 底色
+    renderer.setClearColor(0x08090c, 0)  // 主题（方案 A 碳黑）；alpha=0，仅作兜底
     host.appendChild(renderer.domElement)
     renderer.domElement.style.display = 'block'
     renderer.domElement.style.width = '100%'
@@ -114,6 +123,9 @@ export default function SplatViewer({
     controls.dampingFactor = 0.08
     controls.autoRotate = autoRotate
     controls.autoRotateSpeed = rotateSpeed
+    // 拖拽灵敏度单独给：留言板上有学长反馈「一滑就转过头」，所以默认从 0.6 降到 0.35
+    controls.rotateSpeed = dragRotateSpeed
+    controls.zoomSpeed = 0.8
     controls.screenSpacePanning = true
 
     const startedAt = performance.now()
@@ -248,7 +260,7 @@ export default function SplatViewer({
       renderer.domElement.remove()
       ;(window as unknown as { __web3dViewer?: ViewerStats }).__web3dViewer = undefined
     }
-  }, [url, autoRotate, rotateSpeed, initialAzimuthDeg, initialElevationDeg])
+  }, [url, autoRotate, rotateSpeed, dragRotateSpeed, initialAzimuthDeg, initialElevationDeg])
 
   return <div ref={hostRef} className={className} style={{ width: '100%', height: '100%' }} />
 }

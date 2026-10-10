@@ -463,6 +463,8 @@ input, select, textarea {
   font-size: 14px;
   transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
+/* 占位符别用浏览器默认的暗灰（在碳黑底上几乎看不见，无障碍上也吃亏） */
+input::placeholder, textarea::placeholder { color: #6f7c90; opacity: 1; }
 input:hover, select:hover, textarea:hover { border-color: var(--line-strong); }
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent-line);
