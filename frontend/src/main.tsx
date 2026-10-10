@@ -2,6 +2,8 @@ import { StrictMode, Suspense, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './index.css'
+import './skin.css' // v2 视觉皮肤（方案 A：碳黑+镭射青）—— 排在 index.css 之后、narrow.css 之前：
+// 桌面规则能覆盖旧样式，而 ≤640px 的窄屏修正仍压在最上层；整体回滚只需删掉这一行
 import './narrow.css' // 窄屏（≤640px）排版修正，必须排在 index.css 之后才覆盖得上
 import App from './App.tsx'
 import AboutPage from './pages/AboutPage.tsx'

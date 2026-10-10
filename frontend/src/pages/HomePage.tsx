@@ -11,6 +11,7 @@ import { useBackend } from '../lib/useBackend'
 export default function HomePage() {
   const mode = useBackend()
   const [featured, setFeatured] = useState<Scene[] | null>(null)
+  const [allScenes, setAllScenes] = useState<Scene[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
 
   useEffect(() => {
@@ -19,6 +20,10 @@ export default function HomePage() {
     fetchScenes({ featured: true, limit: 4 })
       .then((doc) => alive && setFeatured(doc.items))
       .catch(() => alive && setFeatured([]))
+    // hero 里那几个数字全部实时取自接口（本站规矩：数字要么实时取、要么不写）
+    fetchScenes({ limit: 200 })
+      .then((doc) => alive && setAllScenes(doc.items))
+      .catch(() => alive && setAllScenes(null))
     fetchStats(14)
       .then((doc) => alive && setStats(doc))
       .catch(() => alive && setStats(null))
@@ -30,30 +35,71 @@ export default function HomePage() {
   const daily = stats?.daily.map((d) => d.views) ?? []
   const labels = stats?.daily.map((d) => d.date.slice(5)) ?? []
 
+  // hero 的仪表盘读数：全部来自 /api/scenes 与 /api/stats，取不到就显示「—」
+  const sceneTotal = allScenes?.length ?? null
+  const splatTotal = allScenes
+    ? allScenes.reduce((sum, s) => sum + (s.num_points ?? 0), 0)
+    : null
+  const bestPsnr = allScenes?.length
+    ? Math.max(...allScenes.map((s) => s.psnr ?? 0))
+    : null
+  const fmt = (n: number | null, unit = '') =>
+    n == null || (unit === 'dB' && n <= 0) ? '—' : `${n.toLocaleString('zh-CN')}${unit}`
+
   return (
     <section className="home">
       <header className="hero">
-        <p className="kicker">双足实验室 · 3D 方向考核作品</p>
+        <div className="hero-cube" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+          <i />
+        </div>
+        <p className="kicker">郑州大学 · 双足实验室 3D 方向 · 2026</p>
         <h1>
-          在浏览器里，转一个
-          <br />
-          我自己训出来的 3DGS 场景
+          <span className="w">在浏览器里，</span>
+          <span className="w">转一个</span>
+          <span className="w">我自己拍的、</span>
+          <span className="w hl">自己训出来的 3DGS 场景</span>
         </h1>
         <p className="lede">
-          三维高斯泼溅（3D Gaussian Splatting）把场景表示成一堆可学习的椭球，
-          几十秒就能渲出一帧照片级画面。这个站点把「训练 → 导出 → 网页实时渲染 → 指标展示」
-          连成一条链：前端 Three.js + Spark 负责渲染，后端 FastAPI 提供场景元数据、访问统计与留言。
+          三维高斯泼溅（3D Gaussian Splatting）把场景表示成一堆可学习的椭球，几十秒就能渲出一帧照片级画面。
+          这个站点把「拍摄 → COLMAP 注册 → 云端训练 → 导出 → 网页实时渲染 → 指标展示」连成一条链：
+          前端 Three.js + Spark 负责渲染，后端 FastAPI 提供场景元数据、访问统计与留言。
+          页面上的高斯点数、PSNR/SSIM、帧率都不是写死的 —— 能对账的都对得起。
         </p>
         <div className="hero-actions">
           <Link to="/scenes" className="btn btn--primary">
-            进入场景库
-          </Link>
-          <Link to="/about" className="btn">
-            关于我
+            进入场景库 →
           </Link>
           <Link to="/methods" className="btn">
             3DGS 方法对比
           </Link>
+          <Link to="/about" className="btn">
+            关于我
+          </Link>
+        </div>
+        <div className="hero-stats" id="hero-stats">
+          <div>
+            <b data-hero="scenes">{fmt(sceneTotal)}</b>
+            <span>在线场景</span>
+          </div>
+          <div>
+            <b data-hero="splats">{fmt(splatTotal)}</b>
+            <span>高斯点合计</span>
+          </div>
+          <div>
+            <b data-hero="best-psnr">
+              {bestPsnr != null && bestPsnr > 0 ? bestPsnr.toFixed(2) : '—'}
+            </b>
+            <span>最好一批 PSNR dB</span>
+          </div>
+          <div>
+            <b data-hero="views">{stats ? stats.total_views.toLocaleString('zh-CN') : '—'}</b>
+            <span>累计浏览</span>
+          </div>
         </div>
       </header>
 

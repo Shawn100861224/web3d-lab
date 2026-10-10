@@ -31,6 +31,44 @@ export default function App() {
     }
   }, [])
 
+  /**
+   * 全局交互增强（v2 皮肤用，纯渐进增强，关掉 JS 内容照样完整可见）：
+   *  1) Card Spotlight —— 鼠标跟随聚光。**只有一个委托监听器**，且只在
+   *     「悬停的元素变了」时才读一次 getBoundingClientRect（避免每次 mousemove
+   *     都强制布局，这是这类效果最常见的性能坑）；只写两个 CSS 变量，不触发重排。
+   *  2) 顶部导航滚动态 —— 滚动超过 8px 时出现 1px 分隔线。
+   *  3) 用户开了 prefers-reduced-motion 就整个跳过（不注册任何监听）。
+   */
+  useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+
+    const SPOT = '.card-scene, .feature, .stats-card, .tile-spot, .panel-block'
+    let current: HTMLElement | null = null
+    let rect: DOMRect | null = null
+
+    const onMove = (e: MouseEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.(SPOT) as HTMLElement | null
+      if (el !== current) {
+        current = el
+        rect = el ? el.getBoundingClientRect() : null
+      }
+      if (!el || !rect) return
+      el.style.setProperty('--mx', `${e.clientX - rect.left}px`)
+      el.style.setProperty('--my', `${e.clientY - rect.top}px`)
+    }
+
+    const nav = document.querySelector('.nav')
+    const onScroll = () => nav?.classList.toggle('scrolled', window.scrollY > 8)
+    onScroll()
+
+    window.addEventListener('mousemove', onMove, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('scroll', onScroll)
+    }
+  }, [])
+
 
   return (
     <div className="shell">
