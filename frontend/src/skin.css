@@ -731,6 +731,9 @@ a:hover { color: var(--accent); }
   background: linear-gradient(180deg, var(--card), var(--card-2));
 }
 .gb-form > label, .gb-full { grid-column: 1 / -1; }
+/* 表单的三块（字段行 / 文本域 / 按钮行）都占满整行；真正的两列在字段行内部 */
+.gb-form > .gb-row, .gb-form > .gb-actions { grid-column: 1 / -1; }
+.gb-row-inner, .gb-form .gb-row > * { min-width: 0; }
 .gb-form label { display: block; font-size: 12.5px; color: var(--dim); margin-bottom: 5px; }
 .gb-form input, .gb-form select, .gb-form textarea { width: 100%; }
 .gb-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
