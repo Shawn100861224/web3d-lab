@@ -260,6 +260,32 @@
       "published": true,
       "created_at": "2026-10-09 04:39:51.323739+00:00",
       "updated_at": "2026-10-09 14:48:28.339407+00:00"
+    },
+    {
+      "id": 32,
+      "slug": "keyboard",
+      "title": "机械键盘（81 视角实拍 · 云端 3 万步）",
+      "summary": "自训场景：82 张手机实拍（主摄 1x、锁 AE/AF），剔除 1 张糊片后用 81 张 → COLMAP 注册 69/81（85.2%，35,217 稀疏点）→ 云端 RTX 4080S 训练 3 万步 → 留出视角 PSNR 23.54 dB / SSIM 0.8123。上线资产做了轻度清理（去掉半透明浮点与超大团子：247,418 → 197,049 高斯），指标仍为训练模型在留出视角上的实测值。",
+      "technique": "3DGS",
+      "source": "self-capture",
+      "num_points": 197049,
+      "sh_degree": 3,
+      "iterations": 30000,
+      "train_seconds": 803,
+      "gpu_mem_mb": 1163,
+      "capture_device": "手机（实拍）",
+      "capture_views": 81,
+      "psnr": 23.54,
+      "ssim": 0.8123,
+      "lpips": null,
+      "asset_url": "/demo/keyboard.splat",
+      "asset_format": "splat",
+      "thumbnail_url": "/demo/keyboard.jpg",
+      "license": "自有照片（本人拍摄）",
+      "featured": true,
+      "published": true,
+      "created_at": "2026-10-11 08:02:22.315861+00:00",
+      "updated_at": "2026-10-11 08:02:22.315869+00:00"
     }
   ],
   "note": "静态兜底数据：后端不可达时前端读取它；由 backend/scripts/export_static.py 生成"
