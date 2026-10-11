@@ -194,6 +194,14 @@ export default function SplatViewer({
         camera.position.copy(center).add(dir.multiplyScalar(distance))
         camera.near = Math.max(distance / 1000, 0.001)
         camera.far = distance + radius * 4
+
+        // 按场景半径卡住「能拉多近 / 推多远」。
+        // 为什么必须卡：3DGS 用的是有限分辨率的高斯，正常距离下每颗只有 2–3 像素、
+        // 看不出接缝；但相机一路推进到模型内部时，这些高斯会变成互相叠压的大团子 ——
+        // 用户看到的就是「键帽重影、大键像两块、键间糊成一片」（2026-10-11 用户实测反馈）。
+        // 最近距离取 0.6×半径：仍能凑近看清细节，但到不了糊掉的尺度。
+        controls.minDistance = Math.max(radius * 0.6, distance * 0.25)
+        controls.maxDistance = Math.max(radius * 4, distance * 3)
         camera.updateProjectionMatrix()
         controls.update()
 
