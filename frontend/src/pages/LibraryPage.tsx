@@ -36,6 +36,11 @@ export default function LibraryPage() {
           每个场景都可以在浏览器里实时旋转查看；点数字来自 <code>/api/scenes</code>
           ，指标为训练时回写的真实评估值。
         </p>
+        <p>
+          带<strong>「早期实验」</strong>标记的是早期几批自训场景：当时受本机显存限制（渲染分辨率与高斯数都被压住），
+          画质明显弱于现在的水平。它们的 PSNR 都如实标在卡片上，全部保留是为了呈现从差到好的完整过程，
+          而不是只留下好看的结果。
+        </p>
       </header>
 
       {mode === 'offline' && (

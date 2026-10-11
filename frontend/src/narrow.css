@@ -52,4 +52,71 @@
     flex-wrap: wrap;
     row-gap: 6px;
   }
+
+  /* ⑤ 手机字号下限（2026-10-11 实测：390px 下 78 个文字节点里 20 个 <13px、最小 11px）——
+     11px 在桌面端是标准小标签档，但在手机上属于「要眯眼看」；而站里被压到 11px 的偏偏是
+     技术条徽标（评审扫技术栈的第一眼）和查看器操作提示（用户不读懂就不会用），最不该小。
+     这里只抬字号、不动布局；验收方式：重跑字号审计，<12px 的文字节点应为 0。 */
+  .badge,
+  .tag,
+  .techstrip,
+  .thumb-badge,
+  .kicker,
+  .brand em,
+  .hud,
+  .hint,
+  .card-scene dt,
+  .card-scene dd,
+  .pj-chip,
+  .pj-tag,
+  .pj-owner,
+  .pj-badge,
+  .pj-dot,
+  .pj-cover-cat,
+  .pj-cover-stars,
+  .pj-kv dt,
+  .radar-stats,
+  .radar-meta,
+  .gb-meta,
+  .gb-form label,
+  .panel .label,
+  .panel-block .label,
+  .feature span,
+  .cmp .venue,
+  .stats-numbers .label,
+  .hero-stats > div span,
+  th,
+  .table-wrap::after,
+  .pill-early {
+    font-size: 12px;
+  }
+
+  /* 正文/说明/数字这一档抬到 14px（原来 12.5–13.5px） */
+  .card-scene p,
+  .pj-desc,
+  .radar-why,
+  .radar-desc,
+  .note,
+  .foot,
+  .stats-scenes li,
+  .pj-btn,
+  .pj-page-btn,
+  .radar-name,
+  .radar-toggle,
+  .radar-install,
+  .count,
+  .panel .row > :last-child,
+  .panel-block .row > :last-child,
+  table {
+    font-size: 14px;
+  }
+
+  /* 抬字号后容易挤在一起，整段文字给足行高 */
+  .note,
+  .card-scene p,
+  .pj-desc,
+  .radar-why,
+  .radar-desc {
+    line-height: 1.62;
+  }
 }
