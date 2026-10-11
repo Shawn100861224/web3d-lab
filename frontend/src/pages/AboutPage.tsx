@@ -212,9 +212,15 @@ export default function AboutPage() {
         所以看到的不是「模型背下了照片」，而是它真的学到了多少。
       </p>
       <figure style={{ margin: '0 0 18px' }}>
+        {/* 359 KB 的三张图都在首屏外 → 懒加载；width/height 是**防 CLS**（写成 img 属性，
+            而不是 CSS 值），否则手机滑到这段时页面会随图片到达而跳动 */}
         <img
           src={assetUrl('/demo/compare-box-60.jpg')}
           alt="手柄包装盒 60 张实拍训练后的留出视角：左为模型渲染，右为同角度真实照片"
+          loading="lazy"
+          decoding="async"
+          width={1400}
+          height={579}
           style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
         />
         <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
@@ -228,6 +234,10 @@ export default function AboutPage() {
           <img
             src={assetUrl('/demo/compare-shoe-43.jpg')}
             alt="用 43 张原图训练后的留出视角：左为模型渲染，右为同角度真实照片"
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={600}
             style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
           />
           <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
@@ -238,6 +248,10 @@ export default function AboutPage() {
           <img
             src={assetUrl('/demo/compare-shoe-37.jpg')}
             alt="剔除 6 张最糊照片后用 37 张重训的留出视角：左为模型渲染，右为同角度真实照片"
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={600}
             style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
           />
           <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
