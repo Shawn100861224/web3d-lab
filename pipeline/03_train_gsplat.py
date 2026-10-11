@@ -149,6 +149,11 @@ def main() -> int:
     ap.add_argument("--steps", type=int, default=7000)
     ap.add_argument("--sh-degree", type=int, default=3)
     ap.add_argument("--holdout", type=int, default=4, help="留出多少个视角只做评估")
+    ap.add_argument("--holdout-every", type=int, default=0,
+                    help="按文件名排序后「每 N 张留出 1 张」做评估（0=关闭，仍用 --holdout 的最后 N 张）。"
+                         "公开 benchmark 用的就是这个口径：gsplat 的数据加载器里 test_every=8，"
+                         "且注释写明「按文件名排序」以保证与历史 Nerf 结果用同一个测试集；"
+                         "3DGS 论文正文也写「taking every 8th photo for test」。要对标论文数字必须用它。")
     ap.add_argument("--down", type=int, default=2, help="图像降采样倍数（8GB 显存建议 2）")
     ap.add_argument("--densify-grad", type=float, default=2e-4,
                     help="稠密化梯度阈值：越小长出的高斯越多、细节越锐（默认 2e-4 对齐 Inria 3DGS）。"
@@ -238,9 +243,18 @@ def main() -> int:
     pts_xyz = pts_xyz * scale_factor
     print(f"场景归一化：半径 {scene_radius:.2f} -> 1.5（缩放系数 {scale_factor:.4f}）")
 
-    n_train = len(views) - args.holdout
-    train_idx = list(range(n_train))
-    test_idx = list(range(n_train, len(views)))
+    if args.holdout_every and args.holdout_every > 1:
+        # 公开 benchmark 口径：按文件名排序后每 N 张取 1 张做测试。
+        # 为什么不能沿用「最后 N 张」：环拍数据里最后 N 张就是一段连续弧，
+        # 等于挖掉一片没训练过的区域（本项目早期就因此误判过画质）。
+        order = sorted(range(len(views)), key=lambda i: views[i]["name"])
+        test_set = {i for k, i in enumerate(order) if k % args.holdout_every == 0}
+        train_idx = [i for i in range(len(views)) if i not in test_set]
+        test_idx = [i for i in range(len(views)) if i in test_set]
+    else:
+        n_train = len(views) - args.holdout
+        train_idx = list(range(n_train))
+        test_idx = list(range(n_train, len(views)))
     print(f"训练视角 {len(train_idx)} / 留出评估视角 {len(test_idx)}（{[views[i]['name'] for i in test_idx]}）")
 
     # ---- 初始化高斯（来自稀疏点云，必要时下采样控显存） ----
