@@ -87,8 +87,14 @@
   .hero-stats > div span,
   th,
   .table-wrap::after,
+  .tagline,
+  .venue,
+  .spark text,
   .pill-early {
-    font-size: 12px;
+    /* 必须 !important：原规则多用 `.rows .tagline`、`table.cmp .venue` 这类多类选择器，
+       逐条抬高优先级既啰嗦又容易漏（第一版就漏了四处，靠审计才发现）。这是「视口范围内的
+       可读性下限」，压过页面规则是它的本意。 */
+    font-size: 12px !important;
   }
 
   /* 正文/说明/数字这一档抬到 14px（原来 12.5–13.5px） */
@@ -108,9 +114,8 @@
   .panel .row > :last-child,
   .panel-block .row > :last-child,
   table {
-    font-size: 14px;
+    font-size: 14px !important;
   }
-
   /* 抬字号后容易挤在一起，整段文字给足行高 */
   .note,
   .card-scene p,
