@@ -72,19 +72,34 @@ export function onBackendStatus(fn: (v: boolean) => void): () => void {
   return () => listeners.delete(fn)
 }
 
-/** 启动时探测一次：2.5 秒不响应就算离线，页面照常可用（静态兜底）。 */
+/** 启动时探测一次：首探 2.5 秒不响应就再给一次 8 秒长超时（后端冷启动需要），
+ *  两次都不行才算离线；页面照常可用（静态兜底）。 */
 export async function probeBackend(timeoutMs = 2500): Promise<boolean> {
-  try {
+  // 冷启动实测：线上 /api/health 第一次要 ~1.1s（Neon 自动唤醒 + 云函数冷启），
+  // 稍冷一点就会超过 2.5s 的首次超时 → fetch 被 AbortController 中断 →
+  // 前端误判「离线」→ 首屏短暂回退到「静态演示版」提示（2026-10-11 抓控制台实测到
+  // /api/health → net::ERR_ABORTED 就是这个原因）。
+  // 所以：首探用短超时保证「正常时快速确认」，失败后再给一次长超时——冷启动的机器
+  // 有足够时间醒来；确实离线也仍会在 ~10s 内定论，不会一直挂着。
+  const attempt = async (ms: number): Promise<boolean> => {
     const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), timeoutMs)
-    const res = await fetch(apiUrl('/api/health'), { signal: ctrl.signal })
-    clearTimeout(timer)
-    setBackendOnline(res.ok)
-    return res.ok
-  } catch {
-    setBackendOnline(false)
-    return false
+    const timer = setTimeout(() => ctrl.abort(), ms)
+    try {
+      const res = await fetch(apiUrl('/api/health'), { signal: ctrl.signal })
+      return res.ok
+    } catch {
+      return false
+    } finally {
+      clearTimeout(timer)
+    }
   }
+
+  let ok = await attempt(timeoutMs)
+  if (!ok) {
+    ok = await attempt(Math.max(timeoutMs * 3, 8000))
+  }
+  setBackendOnline(ok)
+  return ok
 }
 
 // ---------- 静态兜底（后端不可达时用） ----------
