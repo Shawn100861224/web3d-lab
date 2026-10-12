@@ -143,6 +143,41 @@ def rgb_to_sh_dc(rgb: torch.Tensor) -> torch.Tensor:
 # 主流程
 # --------------------------------------------------------------------------- #
 
+def _nearest_neighbor_distance(pts: np.ndarray) -> np.ndarray:
+    """每个点到它最近邻的距离 —— 官方 3DGS 的 `distCUDA2(points)` 算的就是这个。
+
+    三级降级，避免为它引入硬依赖（云端/本机装了哪个就用哪个）：
+      1. scipy.spatial.cKDTree（138k 点约 0.2 秒）
+      2. sklearn.neighbors
+      3. 纯 numpy 分块暴力（慢但一定跑得起来）
+    """
+    p = np.ascontiguousarray(pts, dtype=np.float64)
+    try:
+        from scipy.spatial import cKDTree
+
+        d, _ = cKDTree(p).query(p, k=2, workers=-1)
+        return d[:, 1].astype(np.float64)
+    except Exception:
+        pass
+    try:
+        from sklearn.neighbors import NearestNeighbors
+
+        nn = NearestNeighbors(n_neighbors=2, algorithm="kd_tree").fit(p)
+        d, _ = nn.kneighbors(p)
+        return d[:, 1].astype(np.float64)
+    except Exception:
+        pass
+    n = p.shape[0]
+    out = np.empty(n, dtype=np.float64)
+    blk = max(1, int(2e7 // max(n, 1)))          # 控制临时矩阵大小
+    for s in range(0, n, blk):
+        e = min(n, s + blk)
+        d2 = ((p[s:e, None, :] - p[None, :, :]) ** 2).sum(-1)
+        d2[np.arange(e - s), np.arange(s, e)] = np.inf    # 排除点自己
+        out[s:e] = np.sqrt(d2.min(1))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True, help="COLMAP 数据集目录（含 images/ 与 sparse/0/）")
@@ -165,6 +200,9 @@ def main() -> int:
                          "随机下采样可以控制显存与首轮耗时")
     ap.add_argument("--lr-pos", type=float, default=1.6e-4)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--legacy-init", action="store_true",
+                    help="复现旧行为做 A/B 对照：初始尺度用「全局平均间距 diag/sqrt(n)*1.5」、"
+                         "初始不透明度用 sigmoid(-1)=0.27。修「无界场景不收敛」时靠它跑对照组。")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -264,14 +302,38 @@ def main() -> int:
         pts_xyz, pts_rgb = pts_xyz[sel], pts_rgb[sel]
     means = torch.from_numpy(pts_xyz).to(dev).requires_grad_(True)
     n = means.shape[0]
-    diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
-    init_scale = diag / math.sqrt(max(n, 1)) * 1.5
-    scales = torch.full((n, 3), math.log(init_scale), device=dev).requires_grad_(True)
+
+    # 初始尺度 = **每个点各自的最近邻距离**（官方 3DGS 口径）。
+    # 为什么不用「全局平均间距」（diag/sqrt(n) * 1.5）：那个式子假设点在整个场景里均匀分布，
+    # 而 360° 无界户外场景的点云极不均匀（近处密、远处稀）。用全局常数会让稀疏处的高斯
+    # 一开就过大过实 → 渲染被糊住 → 训练前期 loss 反而上升（2026-10-12 在 Mip-NeRF 360 garden
+    # 上实测：loss 0.2455→0.3132、train PSNR 14.78→11.91，500 步内连升）。
+    # 官方原文（graphdeco-inria/gaussian-splatting, scene/gaussian_model.py）：
+    #   dist2 = clamp_min(distCUDA2(points), 1e-7)
+    #   scales = log(sqrt(dist2))[..., None].repeat(1, 3)
+    # 对均匀点云（如物体级环拍）两种算法结果接近，所以这个改动只修正病态数据、不动好数据。
+    if args.legacy_init:
+        # 旧行为（对照组）：全局平均间距 + 偏实的不透明度
+        diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
+        init_scale = diag / math.sqrt(max(n, 1)) * 1.5
+        scales = torch.full((n, 3), math.log(init_scale), device=dev).requires_grad_(True)
+        opac_init = -1.0
+        print(f"⚠ --legacy-init（对照组）：初始尺度 = 全局常数 {init_scale:.5f}，"
+              f"不透明度 sigmoid(-1)={1/(1+math.exp(1)):.2f}")
+    else:
+        nn_dist = _nearest_neighbor_distance(pts_xyz)
+        init_scale = float(np.median(nn_dist))
+        scales = torch.from_numpy(np.log(np.clip(nn_dist, 1e-7, None)).astype(np.float32)).to(dev)
+        scales = scales[:, None].repeat(1, 3).requires_grad_(True)
+        opac_init = math.log(0.1 / 0.9)
+        print(f"初始尺度（官方口径·逐点最近邻）：中位 {init_scale:.5f} / "
+              f"p10 {np.percentile(nn_dist, 10):.5f} / p90 {np.percentile(nn_dist, 90):.5f}；"
+              f"不透明度 0.10")
     quats = torch.zeros((n, 4), device=dev)
     quats[:, 0] = 1.0
     quats.requires_grad_(True)
     # gsplat 的 rasterization 要求 opacities 形状是 (N,)，不是 (N,1)
-    opac_raw = torch.full((n,), -1.0, device=dev).requires_grad_(True)  # sigmoid(-1)=0.27
+    opac_raw = torch.full((n,), opac_init, device=dev).requires_grad_(True)
     sh_dc = rgb_to_sh_dc(torch.from_numpy(pts_rgb.astype(np.float32) / 255.0).to(dev)).unsqueeze(1)
     K_sh = (args.sh_degree + 1) ** 2
     sh_rest = torch.zeros((n, K_sh - 1, 3), device=dev)
