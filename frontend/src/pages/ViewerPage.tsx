@@ -30,6 +30,9 @@ export const EMPTY_STATS: ViewerStats = {
  */
 const SCENE_VIEW: Record<string, { az: number; el?: number }> = {
   'robot-head': { az: 180, el: 10 },
+  // valley（spark 官方示例，室外大场景）：8 个方位扫描实测，az=270 是内容最多的方向
+  // （同一视口下画布截图 179 KB，其余方位 79–96 KB），默认机位用它能让访客第一眼看到最多的内容。
+  valley: { az: 270, el: 15 },
   // shoe：资产绕 X 轴翻 180° 之后，网页坐标 = (180 − 拍摄方位角, −拍摄仰角)。
   // az 153 / el 14 对应实拍照片 038 的机位（鞋头朝左、鞋底朝下，覆盖最好的一侧）。
   // 原先的默认 (0, 12) 落在两台真实相机之间约 40° 的空档里，第一眼看到的是最弱的方向。
