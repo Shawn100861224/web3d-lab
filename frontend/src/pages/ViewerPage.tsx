@@ -119,9 +119,15 @@ export default function ViewerPage() {
   }, [live.status, slug])
 
   const pct = Math.round(live.progress * 100)
-  // 数据里的 asset_url 是后端视角的绝对路径（/demo/x.splat）；子路径部署时要补上 base，
+  // 数据里的 asset_url 是后端视角的绝对路径（/demo/x.spz）；子路径部署时要补上 base，
   // 否则浏览器会去站点根目录找，直接 404。
-  const assetUrl = assetUrlOf(scene?.asset_url ?? `/demo/${slug}.splat`)
+  // 多个分片用半角逗号分隔（为什么可以拆：Spark 的 SplatAccumulator 会把场景里所有
+  // SplatMesh 的高斯收进同一张纹理并全局排序，分片与单文件渲染等效）——
+  // 这里逐段补 base，再拼回逗号串交给查看器。
+  const assetUrl = (scene?.asset_url ?? `/demo/${slug}.splat`)
+    .split(',')
+    .map((u) => assetUrlOf(u.trim()))
+    .join(',')
 
   const preset = SCENE_VIEW[slug] ?? {}
   const override = viewOverride()

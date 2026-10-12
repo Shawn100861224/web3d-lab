@@ -22,7 +22,15 @@ export type ViewerStats = {
 }
 
 type Props = {
-  /** .spz/.splat/.ply 资产地址（同源，放在 public/demo/ 下） */
+  /**
+   * .spz/.splat/.ply 资产地址（同源，放在 public/demo/ 下）。
+   *
+   * 多个文件用**半角逗号**分隔，例如 `/demo/x-1.spz,/demo/x-2.spz`。
+   * 为什么可以这么拆：Spark 的 `SplatAccumulator` 会把场景里**所有** SplatMesh 的
+   * 高斯收进同一张 DataArrayTexture（每个来源只占一个 base/count 区段），
+   * 排序也施加在累加后的全集上 —— 所以「N 个分片」与「1 个合并文件」在渲染上等效，
+   * 分片只是为了绕开托管平台的单文件体积上限。
+   */
   url: string
   autoRotate?: boolean
   /** 自动巡航的角速度（弧度/秒），0 表示关闭 */
@@ -130,26 +138,45 @@ export default function SplatViewer({
 
     const startedAt = performance.now()
     let disposed = false
-    let splat: SplatMesh | null = null
 
-    splat = new SplatMesh({
-      url,
-      onProgress: (event: ProgressEvent) => {
-        if (disposed) return
-        const total = event.total || 0
-        const progress = total > 0 ? Math.min(1, event.loaded / total) : 0
-        push({ progress, bytes: event.loaded })
-      },
+    // 支持逗号分隔的多分片：单文件时与历史行为完全一致。
+    const urls = url
+      .split(',')
+      .map((u) => u.trim())
+      .filter(Boolean)
+    const loaded = new Array(urls.length).fill(0)
+    const totals = new Array(urls.length).fill(0)
+    const splats: SplatMesh[] = urls.map((u, i) => {
+      const mesh = new SplatMesh({
+        url: u,
+        onProgress: (event: ProgressEvent) => {
+          if (disposed) return
+          loaded[i] = event.loaded
+          if (event.total) totals[i] = event.total
+          const sumTotal = totals.reduce((a, b) => a + b, 0)
+          const sumLoaded = loaded.reduce((a, b) => a + b, 0)
+          push({
+            progress: sumTotal > 0 ? Math.min(1, sumLoaded / sumTotal) : 0,
+            bytes: sumLoaded,
+          })
+        },
+      })
+      scene.add(mesh)
+      return mesh
     })
-    scene.add(splat)
 
-    splat.initialized
-      .then((mesh) => {
+    Promise.all(splats.map((s) => s.initialized))
+      .then((meshes) => {
         if (disposed) return
-        // 资产来自 OpenCV 坐标系（+Y 向下），绕 X 轴翻 180° 才正立
-        mesh.quaternion.set(1, 0, 0, 0)
-
-        const box = mesh.getBoundingBox()
+        // 资产来自 OpenCV 坐标系（+Y 向下），绕 X 轴翻 180° 才正立；
+        // 多分片时多个 mesh 用同一个包围盒并集取景。
+        const box = new THREE.Box3()
+        let numSplats = 0
+        for (const mesh of meshes) {
+          mesh.quaternion.set(1, 0, 0, 0)
+          box.union(mesh.getBoundingBox())
+          numSplats += mesh.numSplats
+        }
         const size = new THREE.Vector3()
         const center = new THREE.Vector3()
         box.getSize(size)
@@ -208,7 +235,7 @@ export default function SplatViewer({
         push({
           status: 'ready',
           progress: 1,
-          numSplats: mesh.numSplats,
+          numSplats,
           loadMs: Math.round(performance.now() - startedAt),
           bytes: statsRef.current.bytes,
           extent: usable ? rawRadius : 0,
@@ -263,7 +290,7 @@ export default function SplatViewer({
       renderer.setAnimationLoop(null)
       ro.disconnect()
       controls.dispose()
-      splat?.dispose()
+      for (const mesh of splats) mesh.dispose()
       renderer.dispose()
       renderer.domElement.remove()
       ;(window as unknown as { __web3dViewer?: ViewerStats }).__web3dViewer = undefined

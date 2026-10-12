@@ -229,6 +229,25 @@ export default function AboutPage() {
           原因在拍摄（单圈视角数量），不在算力。
         </figcaption>
       </figure>
+      <figure style={{ margin: '0 0 18px' }}>
+        <img
+          src={assetUrl('/demo/compare-garden.jpg')}
+          alt="Mip-NeRF 360 garden 公开数据集对标：左为本人训练模型的渲染，右为同角度真实照片"
+          loading="lazy"
+          decoding="async"
+          width={2000}
+          height={647}
+          style={{ width: '100%', height: 'auto', borderRadius: 10, border: '1px solid var(--line)' }}
+        />
+        <figcaption style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: 8, lineHeight: 1.65 }}>
+          <b>公开数据集对标（Mip-NeRF 360 · garden）</b>：185 张真实照片、1/4 分辨率 1297×840、
+          官方 COLMAP 模型；按 3DGS 论文口径每 8 张留出 1 张（161 训练 / 24 测试），
+          留出视角 <b>PSNR 26.06 dB / SSIM 0.8199</b>。同一份数据用基脚本（缺 <code>exp(scales)</code> 尺度激活）
+          只有 <b>11.8 dB</b> —— 这 <b>+14.3 dB</b> 是公开基准给出的定量结论，不是自我感觉。
+          对照论文 garden 30k 的 27.41 dB 与 gsplat 官方评测页的 27.32 dB，本次低约 1.3 dB
+          （差距来自训练调度差异，未逐项定位）。<b>左=渲染，右=同角度真实照片。</b>
+        </figcaption>
+      </figure>
       <div className="two-col">
         <figure style={{ margin: 0 }}>
           <img
