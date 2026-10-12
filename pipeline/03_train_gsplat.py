@@ -200,9 +200,11 @@ def main() -> int:
                          "随机下采样可以控制显存与首轮耗时")
     ap.add_argument("--lr-pos", type=float, default=1.6e-4)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--legacy-init", action="store_true",
-                    help="复现旧行为做 A/B 对照：初始尺度用「全局平均间距 diag/sqrt(n)*1.5」、"
-                         "初始不透明度用 sigmoid(-1)=0.27。修「无界场景不收敛」时靠它跑对照组。")
+    ap.add_argument("--nn-init", action="store_true",
+                    help="初始尺度改用官方 3DGS 口径（每个点各自的最近邻距离）、初始不透明度 0.1。"
+                         "2026-10-12 在 Mip-NeRF 360 garden 上做 A/B 实测：**并未改善** loss 上升 "
+                         "（E2 500 步仍 0.2702→0.2802 震荡不降），且物体级数据（键盘）的初始尺度会被"
+                         "改小约 69 倍 —— 因此**默认关闭**，保留纯粹是为了复现那次对照实验。")
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -303,24 +305,20 @@ def main() -> int:
     means = torch.from_numpy(pts_xyz).to(dev).requires_grad_(True)
     n = means.shape[0]
 
-    # 初始尺度 = **每个点各自的最近邻距离**（官方 3DGS 口径）。
-    # 为什么不用「全局平均间距」（diag/sqrt(n) * 1.5）：那个式子假设点在整个场景里均匀分布，
-    # 而 360° 无界户外场景的点云极不均匀（近处密、远处稀）。用全局常数会让稀疏处的高斯
-    # 一开就过大过实 → 渲染被糊住 → 训练前期 loss 反而上升（2026-10-12 在 Mip-NeRF 360 garden
-    # 上实测：loss 0.2455→0.3132、train PSNR 14.78→11.91，500 步内连升）。
+    # 初始化尺度。
+    # 2026-10-12 对照实验结论（Mip-NeRF 360 garden，各 500 步，同一环境）：
+    #   E1 默认（全局平均间距 diag/sqrt(n)*1.5）→ loss 0.2455→0.3132 上升 ✗（与线上失败逐位一致）
+    #   E2 --nn-init（官方口径：逐点最近邻）    → loss 0.2702→0.2802 仍震荡不降 ✗
+    #   E3 --nn-init + 点云下采样到 3 万        → 同样不降 ✗
+    # ⇒ 「初始尺度」与「点云离群点」都**不是** garden 失效的原因，两者已被实测排除。
+    # 另一条实测：键盘（物体级、训练正常）按官方口径的初始尺度会缩小约 69 倍 ——
+    # 说明「与官方不一致」本身不足以定罪，贸然改默认值反而有搞坏好数据的风险。
+    # 因此：默认保持原行为，官方口径作为 --nn-init 实验分支保留，供复现那次对照实验。
     # 官方原文（graphdeco-inria/gaussian-splatting, scene/gaussian_model.py）：
     #   dist2 = clamp_min(distCUDA2(points), 1e-7)
     #   scales = log(sqrt(dist2))[..., None].repeat(1, 3)
-    # 对均匀点云（如物体级环拍）两种算法结果接近，所以这个改动只修正病态数据、不动好数据。
-    if args.legacy_init:
-        # 旧行为（对照组）：全局平均间距 + 偏实的不透明度
-        diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
-        init_scale = diag / math.sqrt(max(n, 1)) * 1.5
-        scales = torch.full((n, 3), math.log(init_scale), device=dev).requires_grad_(True)
-        opac_init = -1.0
-        print(f"⚠ --legacy-init（对照组）：初始尺度 = 全局常数 {init_scale:.5f}，"
-              f"不透明度 sigmoid(-1)={1/(1+math.exp(1)):.2f}")
-    else:
+    if args.nn_init:
+        # 官方口径（实验分支，默认关闭 —— 实测未改善 garden 的收敛问题，见 --nn-init 的帮助）
         nn_dist = _nearest_neighbor_distance(pts_xyz)
         init_scale = float(np.median(nn_dist))
         scales = torch.from_numpy(np.log(np.clip(nn_dist, 1e-7, None)).astype(np.float32)).to(dev)
@@ -329,6 +327,13 @@ def main() -> int:
         print(f"初始尺度（官方口径·逐点最近邻）：中位 {init_scale:.5f} / "
               f"p10 {np.percentile(nn_dist, 10):.5f} / p90 {np.percentile(nn_dist, 90):.5f}；"
               f"不透明度 0.10")
+    else:
+        # 默认行为：全局平均间距（对物体级环拍有效；无界场景的失效原因尚未查明）
+        diag = float(np.linalg.norm(pts_xyz.max(0) - pts_xyz.min(0)))
+        init_scale = diag / math.sqrt(max(n, 1)) * 1.5
+        scales = torch.full((n, 3), math.log(init_scale), device=dev).requires_grad_(True)
+        opac_init = -1.0
+        print(f"初始尺度（默认·全局平均间距）：{init_scale:.5f}，不透明度 sigmoid(-1)=0.27")
     quats = torch.zeros((n, 4), device=dev)
     quats[:, 0] = 1.0
     quats.requires_grad_(True)
