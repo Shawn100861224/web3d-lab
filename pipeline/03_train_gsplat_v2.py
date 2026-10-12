@@ -133,6 +133,10 @@ def main() -> int:
                     help="DefaultStrategy 的 refine_stop_iter：之后停止稠密化（控高斯数与耗时）")
     ap.add_argument("--save-every", type=int, default=0,
                     help="每 N 步存一次 ckpt PLY（0=不存）。长任务保险：云端被杀时还有产物")
+    ap.add_argument("--holdout-every", type=int, default=0,
+                    help="按文件名排序后「每 N 张留出 1 张」做评估（0=关闭）。公开 benchmark 口径："
+                         "gsplat 的 datasets/colmap.py 里 test_every=8，3DGS 论文也写 taking every 8th photo for test。"
+                         "跑 Mip-NeRF 360 / Tanks&Temples 这类对标时必须用它。")
     ap.add_argument("--holdout-mode", choices=["tail", "ring"], default="tail",
                     help="tail=留出最后 N 个视角（历史行为）；ring=按相机绕主体的方位角均匀铺开留出。"
                          "实测 images.txt 的顺序与拍摄顺序无关：tail 会留出一整段连续弧（约 70° 无训练数据），"
@@ -212,22 +216,33 @@ def main() -> int:
     print(f"  校验：点云跨度 {_pn:.3f} | 相机中心到原点中位距离 "
           f"{np.median(np.linalg.norm(_cc, axis=1)):.3f}（应 > 点云跨度的一半）")
 
-    n_train = len(views) - args.holdout
-    train_idx, test_idx = list(range(n_train)), list(range(n_train, len(views)))
-    if args.holdout_mode == "ring" and 0 < args.holdout < len(views):
-        # 相机中心落在主体周围一圈上 → 用「到相机群中心的方位角」排序，再等间隔留出，
-        # 保证留出视角在环上均匀分布（而不是 tail 那种一整段盲区）。
-        _C = (-viewmats[:, :3, :3].transpose(1, 2) @ viewmats[:, :3, 3:4]).cpu().numpy().reshape(-1, 3)
-        _Cc = _C - _C.mean(0, keepdims=True)
-        _, _, _Vt = np.linalg.svd(_Cc, full_matrices=False)
-        _ang = np.arctan2(_Cc @ _Vt[1], _Cc @ _Vt[0])
-        _order = list(np.argsort(_ang))
-        _step = len(_order) / args.holdout
-        test_idx = sorted({_order[min(int(round(i * _step)), len(_order) - 1)]
-                           for i in range(args.holdout)})
+    if args.holdout_every and args.holdout_every > 1:
+        # 公开 benchmark 口径：按文件名排序后每 N 张取 1 张做测试。
+        # 与基脚本 03_train_gsplat.py 里的同名开关一致；对标 Mip-NeRF 360 时必须用它，
+        # 否则用的是 tail/ring，指标与论文不可比。
+        _order = sorted(range(len(views)), key=lambda i: images[i]["name"])
+        test_idx = sorted(i for k, i in enumerate(_order) if k % args.holdout_every == 0)
         train_idx = [i for i in range(len(views)) if i not in set(test_idx)]
-        print(f"留出方式 ring：按绕环方位角均匀留出 {len(test_idx)} 个视角 "
-              f"（{', '.join(images[i]['name'] for i in test_idx)}），训练 {len(train_idx)} 个")
+        print(f"留出方式 every-{args.holdout_every}（公开 benchmark 口径）："
+              f"测试 {len(test_idx)} / 训练 {len(train_idx)}；前 3 个测试视角 "
+              f"{', '.join(images[i]['name'] for i in test_idx[:3])}")
+    else:
+        n_train = len(views) - args.holdout
+        train_idx, test_idx = list(range(n_train)), list(range(n_train, len(views)))
+        if args.holdout_mode == "ring" and 0 < args.holdout < len(views):
+            # 相机中心落在主体周围一圈上 → 用「到相机群中心的方位角」排序，再等间隔留出，
+            # 保证留出视角在环上均匀分布（而不是 tail 那种一整段盲区）。
+            _C = (-viewmats[:, :3, :3].transpose(1, 2) @ viewmats[:, :3, 3:4]).cpu().numpy().reshape(-1, 3)
+            _Cc = _C - _C.mean(0, keepdims=True)
+            _, _, _Vt = np.linalg.svd(_Cc, full_matrices=False)
+            _ang = np.arctan2(_Cc @ _Vt[1], _Cc @ _Vt[0])
+            _order = list(np.argsort(_ang))
+            _step = len(_order) / args.holdout
+            test_idx = sorted({_order[min(int(round(i * _step)), len(_order) - 1)]
+                               for i in range(args.holdout)})
+            train_idx = [i for i in range(len(views)) if i not in set(test_idx)]
+            print(f"留出方式 ring：按绕环方位角均匀留出 {len(test_idx)} 个视角 "
+                  f"（{', '.join(images[i]['name'] for i in test_idx)}），训练 {len(train_idx)} 个")
 
     params = build_params(pts_xyz, pts_rgb, scene_scale=args.scene_scale)
     optimizers = make_optimizers(params)
