@@ -178,6 +178,11 @@ def _nearest_neighbor_distance(pts: np.ndarray) -> np.ndarray:
     return out
 
 
+# ⚠️ 跑真实训练请用 03_train_gsplat_v2.py（正式入口）。本文件是最初的「最小可跑通链路」，
+# 只应作为 v2 的依赖被 import。它的 rasterization 调用曾长期漏掉 torch.exp(scales) ——
+# gsplat 要的是「已激活的线性尺度」，传 log 值会让每颗高斯大约 250 倍过大，
+# 症状是「不收敛 + 显存爆炸 + 慢 20 倍以上」。2026-10-12 已修（两处调用都加了 exp），
+# 并把这轮误判（拿本文件去跑 Mip-NeRF 360 garden，白做 4 组实验）记进技能。
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", required=True, help="COLMAP 数据集目录（含 images/ 与 sparse/0/）")
@@ -373,7 +378,7 @@ def main() -> int:
 
         colors = sh[:, : (cur_deg + 1) ** 2, :]
         renders, alphas, meta = rasterization(
-            means, quats, scales, torch.sigmoid(opac_raw), colors,
+            means, quats, torch.exp(scales), torch.sigmoid(opac_raw), colors,
             viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H,
             sh_degree=cur_deg,
         )
@@ -469,7 +474,7 @@ def main() -> int:
         for cam in test_idx:
             gt = (views[cam]["image"].permute(2, 0, 1).unsqueeze(0).to(dev).float() / 255.0)
             renders, _, _ = rasterization(
-                means, quats, scales, torch.sigmoid(opac_raw), sh,
+                means, quats, torch.exp(scales), torch.sigmoid(opac_raw), sh,
                 viewmats[cam : cam + 1], Ks[cam : cam + 1], W, H, sh_degree=args.sh_degree,
             )
             ev = renders[0].permute(2, 0, 1).unsqueeze(0)
