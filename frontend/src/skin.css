@@ -382,8 +382,12 @@ body {
 }
 
 /* 精选场景（首页 .feature-row） */
+/* ⚠️ index.css 里 .feature 是「左小图 96×54 + 右文字」的【横向】flex；10-11 改版把图片放大成
+   整宽（下面的 img 规则）却忘了改方向 ⇒ 图片吃掉整宽、文字被压成 2–3 字一列 ✗
+   （2026-10-13 实测复现：390px 下第一张卡文字剩「机械键/盘（81/视角实/拍·云/端3万/步」）。
+   这里显式改成【纵向】：大图在上、标题与点数在下 —— 与场景库卡片的语言一致，三张卡才一样。 */
 .feature-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
-.feature { overflow: hidden; text-decoration: none; color: inherit; }
+.feature { display: flex; flex-direction: column; align-items: stretch; gap: 0; overflow: hidden; text-decoration: none; color: inherit; }
 .feature img { width: 100%; height: 152px; object-fit: cover; display: block; }
 .feature > div { padding: 12px 14px 14px; }
 .feature strong { display: block; font-size: 14.5px; margin-bottom: 4px; }
