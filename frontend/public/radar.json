@@ -426,7 +426,7 @@
    "hot": false,
    "tier": "picked",
    "category": "点云与几何",
-   "why": "把相机模型、投影、可微 CV 算子都做成了 PyTorch 模块，写几何网络省的自己推公式。",
+   "why": "把相机模型、投影、可微 CV 算子都做成了 PyTorch 模块，写几何网络省得自己推公式。",
    "install": "pip install kornia"
   },
   {

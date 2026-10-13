@@ -711,12 +711,15 @@ a:hover { color: var(--accent); }
   font-size: 10.5px;
   padding: 2px 7px;
   border-radius: 6px;
-  background: rgba(8, 9, 12, 0.75);
-  border: 1px solid var(--line);
-  color: var(--muted);
+  /* 原来这里是 rgba(8,9,12,0.75) 近黑半透明 —— 压在【浅色】的 GitHub 预览卡上就是「一坨黑盖在图上」✗
+     （2026-10-14 用户反馈）。实测本地缓存的 116 张封面亮度中位 239、最暗 228（全是浅色）
+     ⇒ 统一改成浅色玻璃：半透明白底 + 细边 + 深色字，任何一张卡上都成立 ✓。 */
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(22, 32, 43, 0.12);
+  color: #16202b;
 }
-.pj-cover-cat { left: 8px; color: var(--accent); border-color: var(--accent-line); }
-.pj-cover-stars { right: 8px; color: var(--fg); }
+.pj-cover-cat { left: 8px; color: #0e7490; border-color: rgba(14, 116, 144, 0.32); }
+.pj-cover-stars { right: 8px; color: #16202b; }
 .pj-body { padding: 12px 14px 14px; flex: 1; display: flex; flex-direction: column; }
 .pj-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .pj-name { font-size: 15px; font-weight: 650; }
