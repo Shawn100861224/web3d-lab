@@ -704,6 +704,9 @@ a:hover { color: var(--accent); }
   color: var(--accent);
   opacity: 0.5;
 }
+/* ⚠️ 2026-10-14：这两个标签（封面图上的分类 / 星标）的**实际生效样式在 `pages/projects.css`** ——
+   那个文件在 skin.css 之后加载，会覆盖下面这条 ✗（我第一次改错了文件，改完线上没变，是读
+   页面计算样式才发现的 ✓）。下面这条只作为「万一加载顺序变了」的兜底，保持与 projects.css 一致 ✓。 */
 .pj-cover-cat, .pj-cover-stars {
   position: absolute;
   top: 8px;

@@ -155,10 +155,13 @@
   top: 9px;
   right: 10px;
   padding: 3px 8px;
-  border: 1px solid var(--line);
+  /* 2026-10-14：原来是 rgba(8,11,16,.55) 近黑 —— 压在【浅色】的 GitHub 预览卡上像一坨黑盖在图上 ✗
+     实测本地 116 张封面亮度中位 239、最暗 228（全浅色）⇒ 统一改浅色玻璃（半透明白 + 深色字）✓
+     ⚠️ 注意：skin.css 里也有一条同名规则，但本文件在它之后加载 ⇒ 【以这里为准】。 */
+  border: 1px solid rgba(22, 32, 43, 0.14);
   border-radius: 999px;
-  background: rgba(8, 11, 16, 0.55);
-  color: var(--fg);
+  background: rgba(255, 255, 255, 0.88);
+  color: #16202b;
   font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
@@ -168,8 +171,10 @@
   bottom: 9px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: rgba(8, 11, 16, 0.6);
-  color: var(--muted);
+  /* 同上（2026-10-14）：近黑 → 浅色玻璃；本项目里以本文件为准 */ 
+  border: 1px solid rgba(14, 116, 144, 0.32);
+  background: rgba(255, 255, 255, 0.88);
+  color: #0e7490;
   font-size: 11px;
 }
 
