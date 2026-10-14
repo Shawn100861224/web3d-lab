@@ -184,6 +184,34 @@ export async function fetchScenes(
   }
 }
 
+/**
+ * 同参数「还在飞」时复用同一个请求的场景列表读取。
+ *
+ * 背景（2026-10-14 实测基线）：首页 App.tsx 与 HomePage.tsx 各调一次
+ * fetchScenes({ limit: 200 })，于是同一个 URL 在首屏被请求两次 ——
+ * 白花 12,209 B 与一个 RTT（实测两份资源条目 duration 都是 3.7–4.1 s）。
+ *
+ * 只做 in-flight 复用（请求一落地就从表里删掉），**不做成功缓存** ——
+ * 站点的规矩是数字要么实时取、要么不写，所以不去承担任何过期风险。
+ */
+const sceneListInflight = new Map<string, Promise<SceneList>>()
+
+export function fetchScenesCached(
+  params: { technique?: string; featured?: boolean; limit?: number } = {},
+): Promise<SceneList> {
+  const key = JSON.stringify(params)
+  const hit = sceneListInflight.get(key)
+  if (hit) return hit
+  const p = fetchScenes(params)
+  sceneListInflight.set(key, p)
+  const drop = () => {
+    // 只在自己仍是当前那次请求时才删，避免把后来者的记录一起删掉
+    if (sceneListInflight.get(key) === p) sceneListInflight.delete(key)
+  }
+  p.then(drop, drop)
+  return p
+}
+
 export function formatBytes(bytes: number): string {
   if (!bytes) return '—'
   const mb = bytes / 1024 / 1024

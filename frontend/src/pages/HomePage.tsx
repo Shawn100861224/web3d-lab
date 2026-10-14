@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sparkline from '../components/Sparkline'
-import { assetUrl, fetchScenes, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
+import { assetUrl, fetchScenes, fetchScenesCached, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
 import { useBackend } from '../lib/useBackend'
 
 /**
@@ -21,7 +21,7 @@ export default function HomePage() {
       .then((doc) => alive && setFeatured(doc.items))
       .catch(() => alive && setFeatured([]))
     // hero 里那几个数字全部实时取自接口（本站规矩：数字要么实时取、要么不写）
-    fetchScenes({ limit: 200 })
+    fetchScenesCached({ limit: 200 })
       .then((doc) => alive && setAllScenes(doc.items))
       .catch(() => alive && setAllScenes(null))
     fetchStats(14)

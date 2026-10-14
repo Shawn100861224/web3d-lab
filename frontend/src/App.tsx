@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
-import { fetchScenes } from './lib/api'
+import { fetchScenesCached } from './lib/api'
 import { useBackend } from './lib/useBackend'
 
 /** 公开联系方式（本人确认公开的邮箱） */
@@ -19,7 +19,7 @@ export default function App() {
 
   useEffect(() => {
     let alive = true
-    fetchScenes({ limit: 200 })
+    fetchScenesCached({ limit: 200 })
       .then((r) => {
         if (alive) setSceneCount(r.total)
       })
