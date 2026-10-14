@@ -212,6 +212,17 @@ export function fetchScenesCached(
   return p
 }
 
+/**
+ * 读取随构建打包的静态快照（同域资源，无云函数冷启动）。
+ *
+ * 用途：首屏「先渲染快照、再用接口覆盖」—— 见 HomePage 的 useEffect。
+ * ⚠️ 调用方**必须让用户看得出这是快照值**（本站规矩：数字要么实时取、要么不写）；
+ * HomePage 里那句 `data-hero-source="snapshot"` 的标注就是干这个的。
+ */
+export function loadBundledScenes(): Promise<Scene[]> {
+  return loadFallbackScenes()
+}
+
 export function formatBytes(bytes: number): string {
   if (!bytes) return '—'
   const mb = bytes / 1024 / 1024

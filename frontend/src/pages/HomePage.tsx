@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sparkline from '../components/Sparkline'
-import { assetUrl, fetchScenes, fetchScenesCached, fetchStats, trackEvent, type Scene, type Stats } from '../lib/api'
+import { assetUrl, fetchScenes, fetchScenesCached, fetchStats, loadBundledScenes, trackEvent, type Scene, type Stats } from '../lib/api'
 import { useBackend } from '../lib/useBackend'
 
 /**
@@ -13,19 +13,41 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Scene[] | null>(null)
   const [allScenes, setAllScenes] = useState<Scene[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
+  /** hero 数字是否已由接口确认（false = 当前显示的是构建时快照，需要标注出来） */
+  const [live, setLive] = useState(false)
 
   useEffect(() => {
     trackEvent('view', '/')
     let alive = true
+    // ① 首屏打底：先用随构建打包的同域快照立即渲染（无冷启动）。
+    //    实测（2026-10-14）云函数 /api/health 冷启动要 2.5 s，原先精选卡与 hero 数字要等 ~4.1 s 才出现。
+    //    快照只打底：接口一旦回来就用真值覆盖（用 prev ?? 保证真值优先，不会被慢到的快照盖回去）。
+    loadBundledScenes()
+      .then((all) => {
+        if (!alive) return
+        const pub = all.filter((s) => s.published)
+        setFeatured((prev) => prev ?? pub.filter((s) => s.featured).slice(0, 4))
+        setAllScenes((prev) => prev ?? pub)
+      })
+      .catch(() => {})
+    // ② 真值覆盖：live 变 true 后，hero 下方那句「构建时快照」标注会自动清空
+    //    （本站规矩：数字要么实时取、要么不写 —— 显示快照值时必须让用户看得出来）
     fetchScenes({ featured: true, limit: 4 })
-      .then((doc) => alive && setFeatured(doc.items))
-      .catch(() => alive && setFeatured([]))
-    // hero 里那几个数字全部实时取自接口（本站规矩：数字要么实时取、要么不写）
+      .then((doc) => {
+        if (!alive) return
+        setFeatured(doc.items)
+        setLive(true)
+      })
+      .catch(() => alive && setFeatured((prev) => prev ?? []))
     fetchScenesCached({ limit: 200 })
       .then((doc) => alive && setAllScenes(doc.items))
-      .catch(() => alive && setAllScenes(null))
+      .catch(() => alive && setAllScenes((prev) => prev ?? null))
     fetchStats(14)
-      .then((doc) => alive && setStats(doc))
+      .then((doc) => {
+        if (!alive) return
+        setStats(doc)
+        setLive(true)
+      })
       .catch(() => alive && setStats(null))
     return () => {
       alive = false
@@ -101,6 +123,11 @@ export default function HomePage() {
             <span>累计浏览</span>
           </div>
         </div>
+        {/* 数字来源标注（T2）：快照打底期间明示，接口确认后自动清空。
+            常驻这一行（只清空文字、不删元素）以免标注消失时页面跳动。 */}
+        <p className="hero-stats-note" data-hero-source={live ? 'live' : 'snapshot'}>
+          {live ? '' : '数字为构建时快照，正在读取实时值…'}
+        </p>
       </header>
 
       <h2 className="section-title">精选场景</h2>
