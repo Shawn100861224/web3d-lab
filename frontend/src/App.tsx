@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 
 import { fetchScenesCached } from './lib/api'
 import { useBackend } from './lib/useBackend'
@@ -114,7 +114,10 @@ export default function App() {
       </div>
 
       <main className="content" id="main" tabIndex={-1}>
-        <Outlet />
+        {/* 页面级按需加载（T4）：路由组件是 lazy 的，兜底只包内容区 —— 导航时页头/页脚不闪 ✓ */}
+        <Suspense fallback={<p style={{ padding: '28px', color: 'var(--muted)' }}>正在加载页面…</p>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <footer className="foot">
