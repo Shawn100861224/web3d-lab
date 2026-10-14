@@ -13,8 +13,10 @@ export default function HomePage() {
   const [featured, setFeatured] = useState<Scene[] | null>(null)
   const [allScenes, setAllScenes] = useState<Scene[] | null>(null)
   const [stats, setStats] = useState<Stats | null>(null)
-  /** hero 数字是否已由接口确认（false = 当前显示的是构建时快照，需要标注出来） */
-  const [live, setLive] = useState(false)
+
+  // hero 数字的来源由【后端状态】决定，不另造状态：
+  // mode 还是 unknown（接口没答复）或 offline（走了打包兜底）时，页面上显示的就是快照值 ⇒ 必须标注出来
+  // （本站规矩：数字要么实时取、要么不写）。
 
   useEffect(() => {
     trackEvent('view', '/')
@@ -30,24 +32,16 @@ export default function HomePage() {
         setAllScenes((prev) => prev ?? pub)
       })
       .catch(() => {})
-    // ② 真值覆盖：live 变 true 后，hero 下方那句「构建时快照」标注会自动清空
+    // ② 真值覆盖：接口一答复，mode 就变 online ⇒ hero 下方那句「打包快照」标注自动清空
     //    （本站规矩：数字要么实时取、要么不写 —— 显示快照值时必须让用户看得出来）
     fetchScenes({ featured: true, limit: 4 })
-      .then((doc) => {
-        if (!alive) return
-        setFeatured(doc.items)
-        setLive(true)
-      })
+      .then((doc) => alive && setFeatured(doc.items))
       .catch(() => alive && setFeatured((prev) => prev ?? []))
     fetchScenesCached({ limit: 200 })
       .then((doc) => alive && setAllScenes(doc.items))
       .catch(() => alive && setAllScenes((prev) => prev ?? null))
     fetchStats(14)
-      .then((doc) => {
-        if (!alive) return
-        setStats(doc)
-        setLive(true)
-      })
+      .then((doc) => alive && setStats(doc))
       .catch(() => alive && setStats(null))
     return () => {
       alive = false
@@ -125,8 +119,8 @@ export default function HomePage() {
         </div>
         {/* 数字来源标注（T2）：快照打底期间明示，接口确认后自动清空。
             常驻这一行（只清空文字、不删元素）以免标注消失时页面跳动。 */}
-        <p className="hero-stats-note" data-hero-source={live ? 'live' : 'snapshot'}>
-          {live ? '' : '数字为构建时快照，正在读取实时值…'}
+        <p className="hero-stats-note" data-hero-source={mode === 'online' ? 'live' : 'snapshot'}>
+          {mode === 'online' ? '' : '数字来自打包快照，正在读取实时值…'}
         </p>
       </header>
 
