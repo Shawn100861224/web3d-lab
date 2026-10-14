@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Sparkline from '../components/Sparkline'
-import { assetUrl, fetchScenes, fetchScenesCached, fetchStats, loadBundledScenes, trackEvent, type Scene, type Stats } from '../lib/api'
+import SceneThumb from '../components/SceneThumb'
+import { fetchScenes, fetchScenesCached, fetchStats, loadBundledScenes, trackEvent, type Scene, type Stats } from '../lib/api'
 import { useBackend } from '../lib/useBackend'
 
 /**
@@ -131,10 +132,11 @@ export default function HomePage() {
       )}
       {featured !== null && featured.length > 0 && (
         <div className="feature-row">
-          {featured.map((s) => (
+          {featured.map((s, i) => (
             <Link key={s.slug} to={`/scenes/${s.slug}`} className="feature">
               {s.thumbnail_url ? (
-                <img src={assetUrl(s.thumbnail_url)} alt={`${s.title} 缩略图`} />
+                /* 首屏第一张优先加载（fetchpriority=high），其余懒加载 ✓ */
+                <SceneThumb src={s.thumbnail_url} alt={`${s.title} 缩略图`} priority={i === 0} />
               ) : (
                 <div className="thumb-empty">暂无缩略图</div>
               )}
